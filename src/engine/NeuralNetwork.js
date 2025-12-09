@@ -9,7 +9,7 @@ export class NeuralNetwork {
     this.outputSize = outputSize;
     this.layers = [];
     this.biases = [];
-    
+
     // Build network architecture
     let prevSize = inputSize;
     for (const size of hiddenLayers) {
@@ -42,12 +42,12 @@ export class NeuralNetwork {
    */
   forward(inputs) {
     let current = inputs;
-    
+
     for (let l = 0; l < this.layers.length; l++) {
       const layer = this.layers[l];
       const bias = this.biases[l];
       const next = [];
-      
+
       for (let i = 0; i < layer.length; i++) {
         let sum = bias[i];
         for (let j = 0; j < current.length; j++) {
@@ -62,7 +62,7 @@ export class NeuralNetwork {
       }
       current = next;
     }
-    
+
     return current;
   }
 
@@ -71,14 +71,14 @@ export class NeuralNetwork {
    */
   getWeights() {
     const weights = [];
-    
+
     for (let l = 0; l < this.layers.length; l++) {
       for (const neuron of this.layers[l]) {
         weights.push(...neuron);
       }
       weights.push(...this.biases[l]);
     }
-    
+
     return weights;
   }
 
@@ -87,7 +87,7 @@ export class NeuralNetwork {
    */
   setWeights(weights) {
     let idx = 0;
-    
+
     for (let l = 0; l < this.layers.length; l++) {
       for (let i = 0; i < this.layers[l].length; i++) {
         for (let j = 0; j < this.layers[l][i].length; j++) {
@@ -114,5 +114,26 @@ export class NeuralNetwork {
    */
   getWeightCount() {
     return this.getWeights().length;
+  }
+
+  /**
+   * Serialize network to JSON object
+   */
+  toJSON() {
+    return {
+      inputSize: this.inputSize,
+      hiddenLayers: this.hiddenLayers,
+      outputSize: this.outputSize,
+      weights: this.getWeights()
+    };
+  }
+
+  /**
+   * Deserialize network from JSON object
+   */
+  static fromJSON(data) {
+    const nn = new NeuralNetwork(data.inputSize, data.hiddenLayers, data.outputSize);
+    nn.setWeights(data.weights);
+    return nn;
   }
 }

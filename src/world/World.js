@@ -424,4 +424,79 @@ export class World {
   setSpeed(speed) {
     this.speed = Math.max(1, Math.min(10, speed));
   }
+
+  /**
+   * Export world state to JSON object
+   */
+  exportState() {
+    return {
+      version: '1.0',
+      timestamp: Date.now(),
+      width: this.width,
+      height: this.height,
+      settings: {
+        populationSize: this.populationSize,
+        foodCount: this.foodCount,
+        meatCount: this.meatCount,
+        obstacleCount: this.obstacleCount,
+        generationLength: this.generationLength,
+        predatorRatio: this.predatorRatio,
+        balancing: this.balancing
+      },
+      stats: {
+        generation: this.generation,
+        tick: this.tick,
+        history: this.stats.history,
+        records: this.records,
+        prevStats: this.prevStats
+      },
+      evolutionLog: {
+        entries: this.evolutionLog.entries.slice(0, 500) // Limit size
+      },
+      creatures: this.creatures.filter(c => c.isAlive()).map(c => c.toJSON()),
+      obstacles: this.obstacles.map(o => ({
+        x: o.x, y: o.y, width: o.width, height: o.height, type: o.type
+      }))
+    };
+  }
+
+  /**
+   * Import world state from JSON object
+   */
+  importState(data) {
+    // 1. Restore settings
+    this.populationSize = data.settings.populationSize;
+    this.foodCount = data.settings.foodCount;
+    this.meatCount = data.settings.meatCount;
+    this.obstacleCount = data.settings.obstacleCount;
+    this.generationLength = data.settings.generationLength;
+    this.predatorRatio = data.settings.predatorRatio;
+    this.balancing = data.settings.balancing;
+
+    // 2. Restore stats
+    this.generation = data.stats.generation;
+    this.tick = data.stats.tick;
+    this.stats.history = data.stats.history;
+    this.records = data.stats.records;
+    this.prevStats = data.stats.prevStats;
+
+    // 3. Restore evolutionary history
+    // We recreate the log with a fresh instance but restore entries
+    this.evolutionLog = new EvolutionLog(150);
+    this.evolutionLog.entries = data.evolutionLog.entries;
+
+    // 4. Restore obstacles
+    this.obstacles = data.obstacles.map(o => new Obstacle(o.x, o.y, o.width, o.height, o.type));
+
+    // 5. Restore creatures
+    this.creatures = data.creatures.map(cData => Creature.fromJSON(cData, this));
+
+    // 6. Respawn food to match current settings (fresh food for new session)
+    this.spawnFood();
+
+    // 7. Update derived stats
+    this.updateStats();
+
+    console.log(`✅ World state imported! Generation ${this.generation}, ${this.creatures.length} creatures.`);
+  }
 }

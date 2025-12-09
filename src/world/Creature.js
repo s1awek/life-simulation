@@ -513,4 +513,55 @@ export class Creature {
       ctx.globalAlpha = 1;
     }
   }
+
+  /**
+   * Serialize creature to JSON object
+   */
+  toJSON() {
+    return {
+      id: this.id,
+      x: this.x,
+      y: this.y,
+      isPredator: this.isPredator,
+      traits: this.traits,
+      stats: {
+        fitness: this.fitness,
+        energy: this.energy,
+        age: this.age,
+        kills: this.kills,
+        foodEaten: this.foodEaten,
+        distanceTraveled: this.distanceTraveled
+      },
+      brain: this.brain.toJSON()
+    };
+  }
+
+  /**
+   * Deserialize creature from JSON object
+   */
+  static fromJSON(data, world) {
+    const creature = new Creature(data.x, data.y, world, {
+      isPredator: data.isPredator,
+      traits: data.traits
+    });
+
+    // Restore stats
+    creature.id = data.id;
+    creature.fitness = data.stats.fitness;
+    creature.energy = data.stats.energy;
+    creature.age = data.stats.age;
+    creature.kills = data.stats.kills;
+    creature.foodEaten = data.stats.foodEaten;
+    creature.distanceTraveled = data.stats.distanceTraveled;
+
+    // Restore brain
+    creature.brain = NeuralNetwork.fromJSON(data.brain);
+
+    // Ensure ID counter doesn't conflict
+    if (data.id > creatureIdCounter) {
+      creatureIdCounter = data.id;
+    }
+
+    return creature;
+  }
 }
