@@ -43,10 +43,15 @@ export class UI {
         <h1>🧬 Evolution</h1>
         <p class="ui-subtitle">Neural Network Predator-Prey Simulation</p>
         <div class="ui-header-actions">
+          <button id="btn-save" class="ui-btn-icon" title="Save Simulation">💾</button>
+          <button id="btn-load" class="ui-btn-icon" title="Load Simulation">📂</button>
           <button id="btn-configure" class="ui-btn-icon" title="Configure Simulation">⚙️</button>
           <button id="btn-toggle-panel" class="ui-btn-icon" title="Hide Panel (H)">✕</button>
         </div>
       </div>
+      
+      <!-- Hidden file input for loading -->
+      <input type="file" id="file-load" style="display: none" accept=".json">
       
       <div class="ui-section">
         <h2>Controls</h2>
@@ -340,6 +345,21 @@ export class UI {
     // Configure button
     document.getElementById('btn-configure').addEventListener('click', () => {
       this.openConfigModal();
+    });
+
+    // Save button
+    document.getElementById('btn-save').addEventListener('click', () => {
+      this.saveSimulation();
+    });
+
+    // Load button
+    document.getElementById('btn-load').addEventListener('click', () => {
+      document.getElementById('file-load').click();
+    });
+
+    // File input change
+    document.getElementById('file-load').addEventListener('change', (e) => {
+      this.handleLoadSimulation(e);
     });
 
     // Modal controls
@@ -807,12 +827,72 @@ export class UI {
       predatorRatio: parseInt(document.getElementById('config-predator').value) / 100
     };
 
-    // Call restart callback if provided
+    this.closeConfigModal();
+
     if (this.onRestartCallback) {
       this.onRestartCallback(config);
     }
+  }
 
-    // Close modal
-    this.closeConfigModal();
+  /**
+   * Save simulation state to file
+   */
+  saveSimulation() {
+    const wasPaused = this.world.isPaused;
+    if (!wasPaused) this.world.togglePause();
+
+    try {
+      const state = this.world.exportState();
+      const json = JSON.stringify(state);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `evolution-gen${this.world.generation}-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log('💾 Simulation saved successfully');
+    } catch (err) {
+      console.error('Failed to save simulation:', err);
+      alert('Failed to save simulation');
+    }
+
+    if (!wasPaused) this.world.togglePause();
+  }
+
+  /**
+   * Handle file upload for loading simulation
+   */
+  handleLoadSimulation(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+
+        // Pause before loading
+        if (!this.world.isPaused) this.world.togglePause();
+
+        this.world.importState(data);
+
+        // Update UI immediately
+        this.update();
+
+        // Reset file input so same file can be loaded again if needed
+        e.target.value = '';
+
+        alert(`✅ Simulation loaded! Generation ${this.world.generation}`);
+      } catch (err) {
+        console.error('Failed to load simulation:', err);
+        alert('Invalid save file');
+      }
+    };
+    reader.readAsText(file);
   }
 }
