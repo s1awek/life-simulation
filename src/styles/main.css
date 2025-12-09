@@ -1,4 +1,4 @@
-/* Life Simulation - Premium Dark Theme */
+/* Life Simulation - Premium Dark Theme with Predator/Prey System */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -19,6 +19,7 @@
   --accent-secondary: #6366f1;
   --accent-green: #22c55e;
   --accent-red: #ef4444;
+  --accent-yellow: #fbbf24;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -48,7 +49,7 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 320px;
+  width: 340px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   background: var(--glass-bg);
@@ -85,7 +86,7 @@ body {
 .ui-header h1 {
   font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-green));
+  background: linear-gradient(135deg, var(--accent-red), var(--accent-green));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -195,6 +196,29 @@ body {
   text-align: right;
 }
 
+/* Population Grid */
+.population-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.stat-item.predator {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.1));
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.stat-item.predator .stat-value {
+  color: var(--accent-red);
+}
+
+.stat-item.herbivore {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.1));
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.stat-item.herbivore .stat-value {
+  color: var(--accent-green);
+}
+
 /* Stats Grid */
 .stats-grid {
   display: grid;
@@ -246,6 +270,117 @@ body {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
+}
+
+/* Evolution Log */
+.log-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.log-filter {
+  flex: 1;
+  padding: 6px 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.log-filter:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.log-filter.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+}
+
+.evolution-log {
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.evolution-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.evolution-log::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 2px;
+}
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--glass-bg);
+  border-radius: 8px;
+  font-size: 11px;
+  animation: fadeInLog 0.3s ease-out;
+}
+
+.log-entry:last-child {
+  margin-bottom: 0;
+}
+
+.log-entry.placeholder {
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.log-icon {
+  font-size: 14px;
+}
+
+.log-text {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+/* Log entry type colors */
+.log-entry.elite {
+  border-left: 3px solid #ffd700;
+}
+
+.log-entry.birth {
+  border-left: 3px solid var(--accent-green);
+}
+
+.log-entry.death {
+  border-left: 3px solid var(--text-muted);
+}
+
+.log-entry.kill {
+  border-left: 3px solid var(--accent-red);
+}
+
+.log-entry.generation {
+  border-left: 3px solid var(--accent-primary);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+@keyframes fadeInLog {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Toggles */
@@ -325,7 +460,7 @@ body {
 @media (max-width: 768px) {
   .ui-panel {
     width: calc(100% - 40px);
-    max-width: 320px;
+    max-width: 340px;
     right: 50%;
     transform: translateX(50%);
     top: auto;
@@ -340,6 +475,7 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -355,7 +491,30 @@ body {
   animation-fill-mode: both;
 }
 
-.ui-section:nth-child(1) { animation-delay: 0.1s; }
-.ui-section:nth-child(2) { animation-delay: 0.2s; }
-.ui-section:nth-child(3) { animation-delay: 0.3s; }
-.ui-section:nth-child(4) { animation-delay: 0.4s; }
+.ui-section:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.ui-section:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ui-section:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.ui-section:nth-child(4) {
+  animation-delay: 0.25s;
+}
+
+.ui-section:nth-child(5) {
+  animation-delay: 0.3s;
+}
+
+.ui-section:nth-child(6) {
+  animation-delay: 0.35s;
+}
+
+.ui-section:nth-child(7) {
+  animation-delay: 0.4s;
+}

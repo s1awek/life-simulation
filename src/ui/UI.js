@@ -1,11 +1,12 @@
 /**
- * UI - Control panel and statistics
+ * UI - Control panel and statistics with Evolution Log
  */
 export class UI {
   constructor(world, renderer) {
     this.world = world;
     this.renderer = renderer;
     this.container = null;
+    this.logFilter = 'all'; // 'all', 'elite', 'birth', 'death', 'kill'
 
     this.init();
   }
@@ -23,7 +24,7 @@ export class UI {
     return `
       <div class="ui-header">
         <h1>🧬 Evolution</h1>
-        <p class="ui-subtitle">Neural Network Life Simulation</p>
+        <p class="ui-subtitle">Neural Network Predator-Prey Simulation</p>
       </div>
       
       <div class="ui-section">
@@ -36,6 +37,20 @@ export class UI {
             <label>Speed</label>
             <input type="range" id="speed-slider" min="1" max="10" value="1">
             <span id="speed-value">1x</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ui-section">
+        <h2>Population</h2>
+        <div class="stats-grid population-grid">
+          <div class="stat-item predator">
+            <span class="stat-label">🔴 Predators</span>
+            <span class="stat-value" id="stat-predators">0</span>
+          </div>
+          <div class="stat-item herbivore">
+            <span class="stat-label">🟢 Herbivores</span>
+            <span class="stat-value" id="stat-herbivores">0</span>
           </div>
         </div>
       </div>
@@ -56,8 +71,8 @@ export class UI {
             <span class="stat-value" id="stat-alive">0</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">Food Eaten</span>
-            <span class="stat-value" id="stat-food">0</span>
+            <span class="stat-label">Kills</span>
+            <span class="stat-value" id="stat-kills">0</span>
           </div>
           <div class="stat-item highlight">
             <span class="stat-label">Avg Fitness</span>
@@ -76,6 +91,20 @@ export class UI {
       </div>
       
       <div class="ui-section">
+        <h2>Evolution Log</h2>
+        <div class="log-filters">
+          <button class="log-filter active" data-filter="all">All</button>
+          <button class="log-filter" data-filter="elite">👑</button>
+          <button class="log-filter" data-filter="birth">🐣</button>
+          <button class="log-filter" data-filter="death">💀</button>
+          <button class="log-filter" data-filter="kill">⚔️</button>
+        </div>
+        <div class="evolution-log" id="evolution-log">
+          <div class="log-entry placeholder">Waiting for events...</div>
+        </div>
+      </div>
+      
+      <div class="ui-section">
         <h2>Display</h2>
         <div class="ui-toggles">
           <label class="toggle">
@@ -86,12 +115,16 @@ export class UI {
             <input type="checkbox" id="toggle-sensors">
             <span>Show Sensors</span>
           </label>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-all-stats">
+            <span>Show All Stats (on pause)</span>
+          </label>
         </div>
       </div>
       
       <div class="ui-footer">
-        <p>Creatures compete for food</p>
-        <p>Best survive and evolve</p>
+        <p>🔴 Predators hunt 🟢 Herbivores</p>
+        <p>Best genes survive and evolve</p>
       </div>
     `;
   }
@@ -122,6 +155,20 @@ export class UI {
     document.getElementById('toggle-sensors').addEventListener('change', () => {
       this.renderer.toggleSensors();
     });
+
+    document.getElementById('toggle-all-stats').addEventListener('change', () => {
+      this.renderer.toggleAllTooltips();
+    });
+
+    // Log filters
+    document.querySelectorAll('.log-filter').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.log-filter').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        this.logFilter = e.target.dataset.filter;
+        this.updateLog();
+      });
+    });
   }
 
   /**
@@ -133,12 +180,50 @@ export class UI {
     document.getElementById('stat-gen').textContent = s.generation;
     document.getElementById('stat-tick').textContent = s.tick;
     document.getElementById('stat-alive').textContent = s.alive;
-    document.getElementById('stat-food').textContent = s.foodEaten;
+    document.getElementById('stat-predators').textContent = s.predators;
+    document.getElementById('stat-herbivores').textContent = s.herbivores;
+    document.getElementById('stat-kills').textContent = s.kills;
     document.getElementById('stat-avg-fitness').textContent = s.avgFitness.toFixed(1);
     document.getElementById('stat-max-fitness').textContent = s.maxFitness.toFixed(1);
 
     // Update chart
     this.drawChart();
+
+    // Update evolution log
+    this.updateLog();
+  }
+
+  updateLog() {
+    const logContainer = document.getElementById('evolution-log');
+    const entries = this.world.evolutionLog.getFormattedEntries(20);
+
+    // Filter entries
+    const filtered = this.logFilter === 'all'
+      ? entries
+      : entries.filter(e => e.type === this.logFilter);
+
+    if (filtered.length === 0) {
+      if (!this._lastLogEmpty) {
+        logContainer.innerHTML = '<div class="log-entry placeholder">No events yet...</div>';
+        this._lastLogEmpty = true;
+      }
+      return;
+    }
+
+    // Create a hash of current entries to check if update needed
+    const currentHash = filtered.map(e => `${e.type}-${e.timestamp}`).join('|');
+    if (currentHash === this._lastLogHash) {
+      return; // No changes, skip DOM update
+    }
+    this._lastLogHash = currentHash;
+    this._lastLogEmpty = false;
+
+    logContainer.innerHTML = filtered.map(entry => `
+      <div class="log-entry ${entry.type} ${entry.isPredator ? 'predator' : 'herbivore'}">
+        <span class="log-icon">${entry.icon}</span>
+        <span class="log-text">${entry.text}</span>
+      </div>
+    `).join('');
   }
 
   drawChart() {

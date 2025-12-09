@@ -1,9 +1,11 @@
 import { Creature } from './Creature.js';
 import { Food } from './Food.js';
 import { GeneticAlgorithm } from '../engine/GeneticAlgorithm.js';
+import { EvolutionLog } from '../engine/EvolutionLog.js';
 
 /**
  * World - The simulation environment
+ * Now with predator/prey ecosystem and evolution logging
  */
 export class World {
   constructor(width, height, options = {}) {
@@ -11,9 +13,11 @@ export class World {
     this.height = height;
 
     // Simulation settings
-    this.populationSize = options.populationSize || 30;
-    this.foodCount = options.foodCount || 50;
-    this.generationLength = options.generationLength || 1000; // ticks per generation
+    this.populationSize = options.populationSize || 40;
+    this.foodCount = options.foodCount || 60;
+    this.meatCount = options.meatCount || 5;
+    this.generationLength = options.generationLength || 1000;
+    this.predatorRatio = options.predatorRatio || 0.2;
 
     // State
     this.creatures = [];
@@ -28,19 +32,27 @@ export class World {
       generation: 1,
       tick: 0,
       alive: 0,
+      predators: 0,
+      herbivores: 0,
       avgFitness: 0,
       maxFitness: 0,
       avgEnergy: 0,
       foodEaten: 0,
+      kills: 0,
       history: []
     };
+
+    // Evolution log
+    this.evolutionLog = new EvolutionLog(150);
 
     // Genetic algorithm
     this.ga = new GeneticAlgorithm({
       mutationRate: 0.1,
       mutationStrength: 0.3,
       elitismRate: 0.1,
-      tournamentSize: 5
+      tournamentSize: 5,
+      traitMutationRate: 0.15,
+      traitMutationStrength: 0.2
     });
 
     // Initialize
@@ -54,25 +66,45 @@ export class World {
 
   spawnCreatures() {
     this.creatures = [];
+    const predatorCount = Math.floor(this.populationSize * this.predatorRatio);
+
     for (let i = 0; i < this.populationSize; i++) {
       const x = Math.random() * this.width;
       const y = Math.random() * this.height;
-      this.creatures.push(new Creature(x, y, this));
+      const isPredator = i < predatorCount;
+      this.creatures.push(new Creature(x, y, this, { isPredator }));
     }
   }
 
   spawnFood() {
     this.foods = [];
+
+    // Spawn plants
     for (let i = 0; i < this.foodCount; i++) {
-      this.addRandomFood();
+      this.addRandomFood('plant');
+    }
+
+    // Spawn some initial meat
+    for (let i = 0; i < this.meatCount; i++) {
+      this.addRandomFood('meat');
     }
   }
 
-  addRandomFood() {
+  addRandomFood(type = 'plant') {
     const x = Math.random() * this.width;
     const y = Math.random() * this.height;
-    const energy = 5 + Math.random() * 15;
-    this.foods.push(new Food(x, y, energy));
+    const energy = type === 'meat'
+      ? 20 + Math.random() * 25
+      : 5 + Math.random() * 15;
+    this.foods.push(new Food(x, y, energy, type));
+  }
+
+  /**
+   * Spawn meat at specific location (when prey dies)
+   */
+  spawnMeat(x, y) {
+    const energy = 25 + Math.random() * 20;
+    this.foods.push(new Food(x, y, energy, 'meat'));
   }
 
   /**
@@ -91,12 +123,32 @@ export class World {
         }
       }
 
+      // Log deaths from starvation
+      for (const creature of this.creatures) {
+        if (!creature.isAlive() && creature.energy <= 0 && !creature._deathLogged) {
+          creature._deathLogged = true;
+          // Only log if not already logged (kill logs death separately)
+          const recentKillLog = this.evolutionLog.entries.find(
+            e => e.type === 'death' && e.creatureId === creature.id
+          );
+          if (!recentKillLog) {
+            this.evolutionLog.logDeath(creature, 'starvation');
+          }
+        }
+      }
+
       // Respawn eaten food
-      const consumedCount = this.foods.filter(f => f.consumed).length;
-      if (consumedCount > this.foodCount * 0.3) {
+      const consumedPlants = this.foods.filter(f => f.consumed && f.type === 'plant').length;
+      const consumedMeat = this.foods.filter(f => f.consumed && f.type === 'meat').length;
+
+      if (consumedPlants > this.foodCount * 0.3 || consumedMeat > 0) {
         this.foods = this.foods.filter(f => !f.consumed);
-        for (let i = 0; i < consumedCount; i++) {
-          this.addRandomFood();
+        for (let i = 0; i < consumedPlants; i++) {
+          this.addRandomFood('plant');
+        }
+        // Meat respawns more sparingly
+        for (let i = 0; i < Math.floor(consumedMeat * 0.3); i++) {
+          this.addRandomFood('meat');
         }
       }
 
@@ -116,19 +168,31 @@ export class World {
   nextGeneration() {
     // Calculate final fitness for all creatures
     for (const c of this.creatures) {
-      // Bonus for surviving
       if (c.isAlive()) {
         c.fitness += c.energy;
       }
     }
 
-    // Record history
+    // Get stats and log generation
     const gaStats = this.ga.getStats(this.creatures);
+
+    this.evolutionLog.logGeneration(this.generation, {
+      avgFitness: gaStats.avg,
+      maxFitness: gaStats.max,
+      predatorCount: gaStats.predatorCount,
+      preyCount: gaStats.preyCount,
+      killCount: gaStats.totalKills,
+      totalDeaths: this.creatures.filter(c => !c.isAlive()).length
+    });
+
+    // Record history
     this.stats.history.push({
       generation: this.generation,
       avgFitness: gaStats.avg,
       maxFitness: gaStats.max,
-      minFitness: gaStats.min
+      minFitness: gaStats.min,
+      predators: gaStats.predatorCount,
+      herbivores: gaStats.preyCount
     });
 
     // Keep only last 50 generations in history
@@ -136,14 +200,14 @@ export class World {
       this.stats.history.shift();
     }
 
-    // Evolve population
-    const createCreature = () => {
+    // Evolve population with trait inheritance
+    const createCreature = (options = {}) => {
       const x = Math.random() * this.width;
       const y = Math.random() * this.height;
-      return new Creature(x, y, this);
+      return new Creature(x, y, this, options);
     };
 
-    this.creatures = this.ga.evolve(this.creatures, createCreature);
+    this.creatures = this.ga.evolve(this.creatures, createCreature, this.evolutionLog);
 
     // Reset world state
     this.generation++;
@@ -155,24 +219,31 @@ export class World {
       c.x = Math.random() * this.width;
       c.y = Math.random() * this.height;
       c.angle = Math.random() * Math.PI * 2;
+      c._deathLogged = false;
     }
   }
 
   updateStats() {
     const alive = this.creatures.filter(c => c.isAlive());
+    const predators = alive.filter(c => c.isPredator);
+    const herbivores = alive.filter(c => !c.isPredator);
     const totalFitness = this.creatures.reduce((sum, c) => sum + c.fitness, 0);
     const totalEnergy = alive.reduce((sum, c) => sum + c.energy, 0);
     const totalFood = this.creatures.reduce((sum, c) => sum + c.foodEaten, 0);
+    const totalKills = this.creatures.reduce((sum, c) => sum + c.kills, 0);
 
     this.stats = {
       ...this.stats,
       generation: this.generation,
       tick: this.tick,
       alive: alive.length,
+      predators: predators.length,
+      herbivores: herbivores.length,
       avgFitness: totalFitness / this.creatures.length,
       maxFitness: Math.max(...this.creatures.map(c => c.fitness)),
       avgEnergy: alive.length > 0 ? totalEnergy / alive.length : 0,
-      foodEaten: totalFood
+      foodEaten: totalFood,
+      kills: totalKills
     };
   }
 

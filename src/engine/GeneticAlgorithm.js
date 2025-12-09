@@ -1,22 +1,27 @@
+import { crossoverTraits, mutateTraits } from './Traits.js';
+
 /**
  * Genetic Algorithm Engine
- * Handles evolution of neural network weights across generations
+ * Handles evolution of neural network weights AND genetic traits across generations
  */
 export class GeneticAlgorithm {
   constructor(options = {}) {
     this.mutationRate = options.mutationRate || 0.1;
     this.mutationStrength = options.mutationStrength || 0.3;
-    this.elitismRate = options.elitismRate || 0.05;
+    this.elitismRate = options.elitismRate || 0.1;
     this.tournamentSize = options.tournamentSize || 5;
+    this.traitMutationRate = options.traitMutationRate || 0.15;
+    this.traitMutationStrength = options.traitMutationStrength || 0.2;
   }
 
   /**
    * Evolve a population based on fitness scores
    * @param {Array} population - Array of creatures with fitness
    * @param {Function} createCreature - Factory function to create new creature
+   * @param {EvolutionLog} evolutionLog - Optional log for tracking
    * @returns {Array} - New generation
    */
-  evolve(population, createCreature) {
+  evolve(population, createCreature, evolutionLog = null) {
     // Sort by fitness (descending)
     const sorted = [...population].sort((a, b) => b.fitness - a.fitness);
     const newGen = [];
@@ -25,10 +30,19 @@ export class GeneticAlgorithm {
     // Elitism - keep top performers unchanged
     const eliteCount = Math.max(1, Math.floor(popSize * this.elitismRate));
     for (let i = 0; i < eliteCount; i++) {
-      const elite = createCreature();
-      elite.brain.setWeights(sorted[i].brain.getWeights());
+      const parent = sorted[i];
+      const elite = createCreature({
+        isPredator: parent.isPredator,
+        traits: { ...parent.traits }
+      });
+      elite.brain.setWeights(parent.brain.getWeights());
       elite.isElite = true;
       newGen.push(elite);
+
+      // Log elite
+      if (evolutionLog) {
+        evolutionLog.logElite(parent, evolutionLog.generationSummaries.length + 1, i + 1);
+      }
     }
 
     // Fill rest with offspring
@@ -36,15 +50,36 @@ export class GeneticAlgorithm {
       const parent1 = this.tournamentSelect(sorted);
       const parent2 = this.tournamentSelect(sorted);
 
-      const child = createCreature();
+      // Crossover and mutate traits
+      const childTraits = crossoverTraits(parent1.traits, parent2.traits);
+      const mutatedTraits = mutateTraits(childTraits, this.traitMutationRate, this.traitMutationStrength);
+
+      // Decide predator status (inherit from random parent with some mutation chance)
+      let isPredator = Math.random() < 0.5 ? parent1.isPredator : parent2.isPredator;
+      // Small chance to flip type
+      if (Math.random() < 0.05) {
+        isPredator = !isPredator;
+      }
+
+      const child = createCreature({
+        isPredator,
+        traits: mutatedTraits
+      });
+
+      // Crossover and mutate brain weights
       const childWeights = this.crossover(
         parent1.brain.getWeights(),
         parent2.brain.getWeights()
       );
-
       this.mutate(childWeights);
       child.brain.setWeights(childWeights);
+
       newGen.push(child);
+
+      // Log birth
+      if (evolutionLog) {
+        evolutionLog.logBirth(child, parent1, parent2, evolutionLog.generationSummaries.length + 1);
+      }
     }
 
     return newGen;
@@ -118,6 +153,10 @@ export class GeneticAlgorithm {
     const max = Math.max(...fitnesses);
     const min = Math.min(...fitnesses);
 
-    return { avg, max, min };
+    const predatorCount = population.filter(c => c.isPredator).length;
+    const preyCount = population.length - predatorCount;
+    const totalKills = population.reduce((sum, c) => sum + (c.kills || 0), 0);
+
+    return { avg, max, min, predatorCount, preyCount, totalKills };
   }
 }
