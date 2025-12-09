@@ -75,6 +75,42 @@ body {
   border-radius: 3px;
 }
 
+.ui-panel.hidden {
+  transform: translateX(calc(100% + 20px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-panel {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Floating Toggle Button */
+.floating-toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
+  transition: all 0.3s ease;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.floating-toggle-btn:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 6px 30px rgba(139, 92, 246, 0.7);
+}
+
 /* Header */
 .ui-header {
   text-align: center;
@@ -98,6 +134,33 @@ body {
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.5px;
+}
+
+.ui-header-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.ui-btn-icon {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.ui-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Sections */

@@ -2,12 +2,14 @@
  * UI - Control panel and statistics with Evolution Log
  */
 export class UI {
-  constructor(world, renderer) {
+  constructor(world, renderer, onRestartCallback = null) {
     this.world = world;
     this.renderer = renderer;
     this.container = null;
     this.logFilter = 'all'; // 'all', 'elite', 'birth', 'death', 'kill'
     this.survivorLogVisible = false;
+    this.isPanelVisible = true;
+    this.onRestartCallback = onRestartCallback;
 
     this.init();
   }
@@ -18,7 +20,16 @@ export class UI {
     this.container.innerHTML = this.getHTML();
     document.body.appendChild(this.container);
 
+    // Create floating toggle button (shown when panel is hidden)
+    this.floatingBtn = document.createElement('button');
+    this.floatingBtn.className = 'floating-toggle-btn';
+    this.floatingBtn.innerHTML = '⚙️';
+    this.floatingBtn.title = 'Show Panel (H)';
+    this.floatingBtn.style.display = 'none';
+    document.body.appendChild(this.floatingBtn);
+
     this.bindEvents();
+    this.bindKeyboardEvents();
   }
 
   getHTML() {
@@ -26,6 +37,10 @@ export class UI {
       <div class="ui-header">
         <h1>🧬 Evolution</h1>
         <p class="ui-subtitle">Neural Network Predator-Prey Simulation</p>
+        <div class="ui-header-actions">
+          <button id="btn-configure" class="ui-btn-icon" title="Configure Simulation">⚙️</button>
+          <button id="btn-toggle-panel" class="ui-btn-icon" title="Hide Panel (H)">✕</button>
+        </div>
       </div>
       
       <div class="ui-section">
@@ -168,6 +183,71 @@ export class UI {
         <p>🔴 Predators hunt 🟢 Herbivores</p>
         <p>Best genes survive and evolve</p>
       </div>
+      
+      <!-- Configuration Modal -->
+      <div id="config-modal" class="modal-overlay">
+        <div class="modal-dialog">
+          <div class="modal-header">
+            <h2>⚙️ Configure Simulation</h2>
+            <button id="btn-close-modal" class="modal-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="config-grid">
+              <div class="config-item">
+                <label>Population Size</label>
+                <div class="slider-container">
+                  <input type="range" id="config-population" min="20" max="300" value="140" step="10">
+                  <span class="slider-value" id="value-population">140</span>
+                </div>
+              </div>
+              
+              <div class="config-item">
+                <label>Food Count</label>
+                <div class="slider-container">
+                  <input type="range" id="config-food" min="50" max="600" value="380" step="10">
+                  <span class="slider-value" id="value-food">380</span>
+                </div>
+              </div>
+              
+              <div class="config-item">
+                <label>Meat Count</label>
+                <div class="slider-container">
+                  <input type="range" id="config-meat" min="0" max="50" value="10" step="1">
+                  <span class="slider-value" id="value-meat">10</span>
+                </div>
+              </div>
+              
+              <div class="config-item">
+                <label>Obstacle Count</label>
+                <div class="slider-container">
+                  <input type="range" id="config-obstacles" min="0" max="100" value="30" step="5">
+                  <span class="slider-value" id="value-obstacles">30</span>
+                </div>
+              </div>
+              
+              <div class="config-item">
+                <label>Generation Length</label>
+                <div class="slider-container">
+                  <input type="range" id="config-generation" min="500" max="30000" value="20000" step="500">
+                  <span class="slider-value" id="value-generation">20000</span>
+                </div>
+              </div>
+              
+              <div class="config-item">
+                <label>Predator Ratio</label>
+                <div class="slider-container">
+                  <input type="range" id="config-predator" min="0" max="50" value="25" step="1">
+                  <span class="slider-value" id="value-predator">25%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-cancel-config" class="ui-btn ui-btn-secondary">Cancel</button>
+            <button id="btn-start-config" class="ui-btn ui-btn-primary">Start New Simulation</button>
+          </div>
+        </div>
+      </div>
     `;
   }
 
@@ -236,6 +316,59 @@ export class UI {
     document.getElementById('btn-zoom-reset').addEventListener('click', () => {
       this.renderer.resetZoom();
       this.updateZoomButton();
+    });
+
+    // Panel toggle button
+    document.getElementById('btn-toggle-panel').addEventListener('click', () => {
+      this.togglePanel();
+    });
+
+    // Floating toggle button
+    this.floatingBtn.addEventListener('click', () => {
+      this.togglePanel();
+    });
+
+    // Configure button
+    document.getElementById('btn-configure').addEventListener('click', () => {
+      this.openConfigModal();
+    });
+
+    // Modal controls
+    document.getElementById('btn-close-modal').addEventListener('click', () => {
+      this.closeConfigModal();
+    });
+
+    document.getElementById('btn-cancel-config').addEventListener('click', () => {
+      this.closeConfigModal();
+    });
+
+    document.getElementById('btn-start-config').addEventListener('click', () => {
+      this.startNewSimulation();
+    });
+
+    // Configuration sliders - update value displays
+    const sliders = [
+      { id: 'config-population', valueId: 'value-population', suffix: '' },
+      { id: 'config-food', valueId: 'value-food', suffix: '' },
+      { id: 'config-meat', valueId: 'value-meat', suffix: '' },
+      { id: 'config-obstacles', valueId: 'value-obstacles', suffix: '' },
+      { id: 'config-generation', valueId: 'value-generation', suffix: '' },
+      { id: 'config-predator', valueId: 'value-predator', suffix: '%' }
+    ];
+
+    sliders.forEach(slider => {
+      const input = document.getElementById(slider.id);
+      const display = document.getElementById(slider.valueId);
+      input.addEventListener('input', (e) => {
+        display.textContent = e.target.value + slider.suffix;
+      });
+    });
+
+    // Close modal on overlay click
+    document.getElementById('config-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'config-modal') {
+        this.closeConfigModal();
+      }
     });
   }
 
@@ -595,5 +728,82 @@ export class UI {
     ctx.textAlign = 'right';
     ctx.fillText(`${maxPop}`, width - padding, 12);
     ctx.textAlign = 'left';
+  }
+
+  /**
+   * Toggle panel visibility
+   */
+  togglePanel() {
+    this.isPanelVisible = !this.isPanelVisible;
+
+    if (this.isPanelVisible) {
+      this.container.classList.remove('hidden');
+      this.floatingBtn.style.display = 'none';
+    } else {
+      this.container.classList.add('hidden');
+      this.floatingBtn.style.display = 'flex';
+    }
+  }
+
+  /**
+   * Bind keyboard events
+   */
+  bindKeyboardEvents() {
+    document.addEventListener('keydown', (e) => {
+      // 'H' key to toggle panel
+      if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Make sure we're not typing in an input
+        if (document.activeElement.tagName !== 'INPUT' &&
+          document.activeElement.tagName !== 'TEXTAREA') {
+          this.togglePanel();
+        }
+      }
+
+      // ESC key to close modal
+      if (e.key === 'Escape') {
+        this.closeConfigModal();
+      }
+    });
+  }
+
+  /**
+   * Open configuration modal
+   */
+  openConfigModal() {
+    const modal = document.getElementById('config-modal');
+    modal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+
+  /**
+   * Close configuration modal
+   */
+  closeConfigModal() {
+    const modal = document.getElementById('config-modal');
+    modal.classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+
+  /**
+   * Start new simulation with configuration
+   */
+  startNewSimulation() {
+    // Gather configuration
+    const config = {
+      populationSize: parseInt(document.getElementById('config-population').value),
+      foodCount: parseInt(document.getElementById('config-food').value),
+      meatCount: parseInt(document.getElementById('config-meat').value),
+      obstacleCount: parseInt(document.getElementById('config-obstacles').value),
+      generationLength: parseInt(document.getElementById('config-generation').value),
+      predatorRatio: parseInt(document.getElementById('config-predator').value) / 100
+    };
+
+    // Call restart callback if provided
+    if (this.onRestartCallback) {
+      this.onRestartCallback(config);
+    }
+
+    // Close modal
+    this.closeConfigModal();
   }
 }
