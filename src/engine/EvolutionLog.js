@@ -115,6 +115,54 @@ export class EvolutionLog {
   }
 
   /**
+   * Get survivor summary for the last generation
+   * Returns elites and offspring details
+   */
+  getSurvivorSummary() {
+    // Get entries from the last generation change
+    const generationEntry = this.entries.find(e => e.type === 'generation');
+    if (!generationEntry) return null;
+
+    const genTimestamp = generationEntry.timestamp;
+
+    // Find all elites and births logged around the same time (within 100ms)
+    const elites = this.entries.filter(e =>
+      e.type === 'elite' &&
+      Math.abs(e.timestamp - genTimestamp) < 100
+    ).sort((a, b) => a.rank - b.rank);
+
+    const births = this.entries.filter(e =>
+      e.type === 'birth' &&
+      Math.abs(e.timestamp - genTimestamp) < 100
+    );
+
+    // Calculate trait averages from elites
+    const traitAverages = {};
+    if (elites.length > 0 && elites[0].traits) {
+      const traitKeys = Object.keys(elites[0].traits);
+      for (const key of traitKeys) {
+        const sum = elites.reduce((acc, e) => acc + (e.traits?.[key] || 0), 0);
+        traitAverages[key] = sum / elites.length;
+      }
+    }
+
+    return {
+      generation: generationEntry.generation,
+      eliteCount: elites.length,
+      offspringCount: births.length,
+      elites: elites.map(e => ({
+        rank: e.rank,
+        fitness: e.fitness,
+        isPredator: e.isPredator,
+        traits: e.traits
+      })),
+      avgFitness: generationEntry.avgFitness,
+      maxFitness: generationEntry.maxFitness,
+      traitAverages
+    };
+  }
+
+  /**
    * Get recent entries filtered by type
    */
   getEntries(type = null, limit = 20) {

@@ -45,6 +45,25 @@ export class World {
     // Evolution log
     this.evolutionLog = new EvolutionLog(150);
 
+    // Records tracking (best ever)
+    this.records = {
+      maxFitness: 0,
+      maxFitnessGen: 0,
+      bestAvgFitness: 0,
+      bestAvgFitnessGen: 0,
+      mostKills: 0,
+      mostKillsGen: 0,
+      longestSurvival: 0
+    };
+
+    // Previous generation stats for trends
+    this.prevStats = {
+      avgFitness: 0,
+      maxFitness: 0,
+      predators: 0,
+      herbivores: 0
+    };
+
     // Genetic algorithm
     this.ga = new GeneticAlgorithm({
       mutationRate: 0.1,
@@ -199,6 +218,28 @@ export class World {
     if (this.stats.history.length > 50) {
       this.stats.history.shift();
     }
+
+    // Update records
+    if (gaStats.max > this.records.maxFitness) {
+      this.records.maxFitness = gaStats.max;
+      this.records.maxFitnessGen = this.generation;
+    }
+    if (gaStats.avg > this.records.bestAvgFitness) {
+      this.records.bestAvgFitness = gaStats.avg;
+      this.records.bestAvgFitnessGen = this.generation;
+    }
+    if (gaStats.totalKills > this.records.mostKills) {
+      this.records.mostKills = gaStats.totalKills;
+      this.records.mostKillsGen = this.generation;
+    }
+
+    // Save previous stats for trends
+    this.prevStats = {
+      avgFitness: this.stats.avgFitness,
+      maxFitness: this.stats.maxFitness,
+      predators: this.stats.predators,
+      herbivores: this.stats.herbivores
+    };
 
     // Evolve population with trait inheritance
     const createCreature = (options = {}) => {

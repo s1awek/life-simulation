@@ -518,3 +518,198 @@ body {
 .ui-section:nth-child(7) {
   animation-delay: 0.4s;
 }
+
+/* Section Header with Toggle */
+.section-header-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-header-toggle h2 {
+  margin-bottom: 0;
+}
+
+.toggle-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Survivor Log */
+.survivor-log {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.survivor-log.collapsed {
+  max-height: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+}
+
+.survivor-placeholder {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.survivor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.survivor-gen {
+  font-weight: 600;
+  color: var(--accent-primary);
+  font-size: 13px;
+}
+
+.survivor-stats {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.survivor-summary {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.survivor-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.survivor-elites {
+  margin-bottom: 12px;
+}
+
+.survivor-elite-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--glass-bg);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.survivor-elite-entry.predator {
+  border-left: 3px solid var(--accent-red);
+}
+
+.survivor-elite-entry.herbivore {
+  border-left: 3px solid var(--accent-green);
+}
+
+.elite-rank {
+  font-weight: 600;
+  color: #ffd700;
+  min-width: 24px;
+}
+
+.elite-type {
+  font-size: 12px;
+}
+
+.elite-fitness {
+  color: var(--text-secondary);
+}
+
+/* Trait Grid */
+.trait-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.trait-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--glass-bg);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.trait-label {
+  color: var(--text-secondary);
+}
+
+.trait-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Records */
+.records-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.record-item {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.record-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.record-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 2px;
+}
+
+.record-gen {
+  display: block;
+  font-size: 9px;
+  color: var(--text-muted);
+}
