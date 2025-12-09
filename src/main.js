@@ -1,24 +1,90 @@
-import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import './styles/main.css';
+import { World } from './world/World.js';
+import { Renderer } from './renderer/Renderer.js';
+import { UI } from './ui/UI.js';
 
-document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
-  </div>
-`
+/**
+ * Life Simulation - Main Entry Point
+ * Neural Network Evolution Simulation
+ */
 
-setupCounter(document.querySelector('#counter'))
+class Simulation {
+  constructor() {
+    this.canvas = null;
+    this.world = null;
+    this.renderer = null;
+    this.ui = null;
+    this.lastTime = 0;
+
+    this.init();
+  }
+
+  init() {
+    // Create canvas
+    this.canvas = document.createElement('canvas');
+    this.canvas.id = 'simulation-canvas';
+    document.body.appendChild(this.canvas);
+
+    // Set canvas size
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+
+    // Create world
+    this.world = new World(this.canvas.width, this.canvas.height, {
+      populationSize: 40,
+      foodCount: 60,
+      generationLength: 800
+    });
+
+    // Create renderer
+    this.renderer = new Renderer(this.canvas, this.world);
+
+    // Create UI
+    this.ui = new UI(this.world, this.renderer);
+
+    // Start animation loop
+    this.animate(0);
+
+    console.log('🧬 Life Simulation Started!');
+    console.log('Population:', this.world.populationSize);
+    console.log('Neural Network Weights:', this.world.creatures[0]?.brain.getWeightCount());
+  }
+
+  resize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    this.canvas.width = width;
+    this.canvas.height = height;
+
+    if (this.world) {
+      this.world.resize(width, height);
+    }
+
+    if (this.renderer) {
+      this.renderer.resize(width, height);
+    }
+  }
+
+  animate(time) {
+    // Update simulation
+    this.world.update();
+
+    // Render
+    this.renderer.render(time);
+
+    // Update UI (throttled)
+    if (time - this.lastTime > 100) {
+      this.ui.update();
+      this.lastTime = time;
+    }
+
+    // Next frame
+    requestAnimationFrame((t) => this.animate(t));
+  }
+}
+
+// Start simulation when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  new Simulation();
+});
