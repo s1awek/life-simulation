@@ -3,7 +3,7 @@
  * Types: plant (herbivores), meat (predators only)
  */
 export class Food {
-  constructor(x, y, energy = 10, type = 'plant', isPredatorMeat = false) {
+  constructor(x, y, energy = 10, type = 'plant', isPredatorMeat = false, fromHunt = false) {
     this.x = x;
     this.y = y;
     this.energy = energy;
@@ -12,6 +12,16 @@ export class Food {
     this.radius = type === 'meat' ? 6 + energy / 8 : 5 + energy / 5;
     this.consumed = false;
     this.pulsePhase = Math.random() * Math.PI * 2;
+
+    // Lifetime system (only for meat)
+    this.age = 0;
+    if (type === 'meat') {
+      // Hunted meat lasts longer (incentivizes hunting)
+      // Starvation meat spoils faster
+      this.lifetime = fromHunt ? 800 : 300; // ticks before spoiling
+    } else {
+      this.lifetime = Infinity; // Plants don't spoil
+    }
 
     // Color based on type and source
     if (type === 'meat') {
@@ -37,6 +47,18 @@ export class Food {
         mid: 'rgba(34, 197, 94, 0.3)',
         core: '#4ade80'
       };
+    }
+  }
+
+  /**
+   * Update food (age and check expiration)
+   */
+  update() {
+    if (this.type === 'meat' && !this.consumed) {
+      this.age++;
+      if (this.age >= this.lifetime) {
+        this.consumed = true; // Mark as spoiled
+      }
     }
   }
 

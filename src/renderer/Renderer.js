@@ -33,6 +33,55 @@ export class Renderer {
     // Keyboard controls
     this.keys = {};
     this.setupControls();
+
+    // Mouse drag panning
+    this.isDragging = false;
+    this.dragStart = { x: 0, y: 0 };
+    this.setupMouseDrag();
+  }
+
+  setupMouseDrag() {
+    this.canvas.addEventListener('mousedown', (e) => {
+      // Right click or middle click for dragging
+      if (e.button === 2 || e.button === 1) {
+        e.preventDefault();
+        this.isDragging = true;
+        this.dragStart = { x: e.clientX, y: e.clientY };
+        this.canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    this.canvas.addEventListener('mousemove', (e) => {
+      if (this.isDragging) {
+        const dx = e.clientX - this.dragStart.x;
+        const dy = e.clientY - this.dragStart.y;
+
+        // Move camera (inverse of drag direction)
+        this.camera.x -= dx / this.camera.zoom;
+        this.camera.y -= dy / this.camera.zoom;
+
+        // Update drag start for next frame
+        this.dragStart = { x: e.clientX, y: e.clientY };
+
+        // Constrain to bounds
+        this.constrainCamera();
+      }
+    });
+
+    this.canvas.addEventListener('mouseup', () => {
+      this.isDragging = false;
+      this.canvas.style.cursor = 'default';
+    });
+
+    this.canvas.addEventListener('mouseleave', () => {
+      this.isDragging = false;
+      this.canvas.style.cursor = 'default';
+    });
+
+    // Prevent context menu on right click
+    this.canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
   }
 
   setupControls() {
@@ -183,7 +232,13 @@ export class Renderer {
       this.camera.x += panSpeed;
     }
 
-    // Constrain camera to world bounds
+    this.constrainCamera();
+  }
+
+  /**
+   * Constrain camera to world bounds
+   */
+  constrainCamera() {
     const viewWidth = this.canvas.width / this.camera.zoom;
     const viewHeight = this.canvas.height / this.camera.zoom;
 
@@ -426,6 +481,6 @@ export class Renderer {
     ctx.fillText(`Zoom: ${zoomPercent}%`, this.canvas.width - 15, this.canvas.height - 15);
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.font = '10px Inter, sans-serif';
-    ctx.fillText('WASD: Pan | +/- or Scroll: Zoom | 0: Reset', this.canvas.width - 15, this.canvas.height - 35);
+    ctx.fillText('WASD: Pan | Right-Click Drag: Pan | +/-: Zoom | 0: Reset', this.canvas.width - 15, this.canvas.height - 35);
   }
 }

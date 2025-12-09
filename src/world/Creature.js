@@ -243,8 +243,8 @@ export class Creature {
           this.world.evolutionLog.logDeath(prey, 'hunted');
         }
 
-        // Spawn meat where prey died (track if it's from predator)
-        this.world.spawnMeat(prey.x, prey.y, prey.isPredator);
+        // Spawn meat where prey died (track if it's from predator AND if from hunt)
+        this.world.spawnMeat(prey.x, prey.y, prey.isPredator, true); // fromHunt = true
       }
     }
   }

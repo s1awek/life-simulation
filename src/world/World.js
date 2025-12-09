@@ -163,10 +163,11 @@ export class World {
   /**
    * Spawn meat at specific location (when prey dies)
    * @param {boolean} fromPredator - If true, meat is from predator (toxic to other predators)
+   * @param {boolean} fromHunt - If true, meat is from successful hunt (lasts longer)
    */
-  spawnMeat(x, y, fromPredator = false) {
+  spawnMeat(x, y, fromPredator = false, fromHunt = false) {
     const energy = 25 + Math.random() * 20;
-    this.foods.push(new Food(x, y, energy, 'meat', fromPredator));
+    this.foods.push(new Food(x, y, energy, 'meat', fromPredator, fromHunt));
   }
 
   /**
@@ -202,6 +203,11 @@ export class World {
     for (let s = 0; s < this.speed; s++) {
       this.tick++;
 
+      // Update all foods (age meat)
+      for (const food of this.foods) {
+        food.update();
+      }
+
       // Update all creatures
       for (const creature of this.creatures) {
         if (creature.isAlive()) {
@@ -209,7 +215,7 @@ export class World {
         }
       }
 
-      // Log deaths from starvation
+      // Log deaths from starvation AND spawn meat
       for (const creature of this.creatures) {
         if (!creature.isAlive() && creature.energy <= 0 && !creature._deathLogged) {
           creature._deathLogged = true;
@@ -219,6 +225,8 @@ export class World {
           );
           if (!recentKillLog) {
             this.evolutionLog.logDeath(creature, 'starvation');
+            // Spawn meat when creature starves (spoils faster)
+            this.spawnMeat(creature.x, creature.y, creature.isPredator, false);
           }
         }
       }
