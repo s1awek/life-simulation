@@ -51,34 +51,43 @@ export class Creature {
     this.trail = [];
     this.flashTime = 0; // For attack flash effect
 
-    // Brain - 12 inputs now (added creature detection + isPredator bias)
-    // Inputs: 4 food sensors, 4 creature sensors, energy, speed, sin(angle), cos(angle)
-    this.brain = new NeuralNetwork(12, [16, 12], 4);
+    // Brain - 16 inputs now (separate predator/prey detection)
+    // Inputs: 4 food sensors, 4 predator sensors, 4 prey sensors, energy, speed, sin(angle), cos(angle)
+    this.brain = new NeuralNetwork(16, [20, 16], 4);
     // Outputs: thrust, turn, boost, attack
 
     // Sensor data
     this.sensorLength = effects.sensorLength;
     this.foodSensors = new Array(4).fill(0);
-    this.creatureSensors = new Array(4).fill(0);
+    this.predatorSensors = new Array(4).fill(0);  // NEW: Detect predators
+    this.preySensors = new Array(4).fill(0);      // NEW: Detect prey
     this.nearestCreature = null;
+    this.nearestPredator = null;  // NEW: Track nearest predator
+    this.nearestPrey = null;      // NEW: Track nearest prey
   }
 
   /**
-   * Sense the environment - detect food and other creatures in 4 directions
+   * Sense the environment - detect food, predators, and prey in 4 directions
    */
   sense() {
     const directions = [0, Math.PI / 2, Math.PI, -Math.PI / 2]; // front, right, back, left
 
     // Reset sensors
     this.foodSensors.fill(0);
-    this.creatureSensors.fill(0);
+    this.predatorSensors.fill(0);
+    this.preySensors.fill(0);
     this.nearestCreature = null;
+    this.nearestPredator = null;
+    this.nearestPrey = null;
     let nearestCreatureDist = Infinity;
+    let nearestPredatorDist = Infinity;
+    let nearestPreyDist = Infinity;
 
     for (let i = 0; i < 4; i++) {
       const sensorAngle = this.angle + directions[i];
       let closestFoodDist = this.sensorLength;
-      let closestCreatureDist = this.sensorLength;
+      let closestPredatorDist = this.sensorLength;
+      let closestPreyDist = this.sensorLength;
 
       // Sense food (predators sense meat BUT NOT predator meat, herbivores sense plants)
       for (const food of this.world.foods) {
@@ -105,7 +114,7 @@ export class Creature {
         }
       }
 
-      // Sense other creatures
+      // Sense other creatures - SEPARATELY for predators and prey
       for (const other of this.world.creatures) {
         if (other === this || !other.isAlive()) continue;
 
@@ -115,10 +124,22 @@ export class Creature {
 
         if (dist > this.sensorLength) continue;
 
-        // Track nearest for attack targeting
+        // Track nearest overall creature for attack targeting
         if (dist < nearestCreatureDist) {
           nearestCreatureDist = dist;
           this.nearestCreature = other;
+        }
+
+        // Track nearest predator (for prey to avoid)
+        if (other.isPredator && dist < nearestPredatorDist) {
+          nearestPredatorDist = dist;
+          this.nearestPredator = other;
+        }
+
+        // Track nearest prey (for predators to hunt)
+        if (!other.isPredator && dist < nearestPreyDist) {
+          nearestPreyDist = dist;
+          this.nearestPrey = other;
         }
 
         const angleToCreature = Math.atan2(dy, dx);
@@ -126,13 +147,20 @@ export class Creature {
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
-        if (Math.abs(angleDiff) < Math.PI / 4 && dist < closestCreatureDist) {
-          closestCreatureDist = dist;
+        if (Math.abs(angleDiff) < Math.PI / 4) {
+          // Separate sensing for predators vs prey
+          if (other.isPredator && dist < closestPredatorDist) {
+            closestPredatorDist = dist;
+          }
+          if (!other.isPredator && dist < closestPreyDist) {
+            closestPreyDist = dist;
+          }
         }
       }
 
       this.foodSensors[i] = 1 - closestFoodDist / this.sensorLength;
-      this.creatureSensors[i] = 1 - closestCreatureDist / this.sensorLength;
+      this.predatorSensors[i] = 1 - closestPredatorDist / this.sensorLength;
+      this.preySensors[i] = 1 - closestPreyDist / this.sensorLength;
     }
   }
 
@@ -142,7 +170,8 @@ export class Creature {
   think() {
     const inputs = [
       ...this.foodSensors,              // 4 food sensors
-      ...this.creatureSensors,          // 4 creature sensors
+      ...this.predatorSensors,          // 4 predator sensors (NEW)
+      ...this.preySensors,              // 4 prey sensors (NEW)
       this.energy / this.maxEnergy,     // normalized energy
       this.speed / this.maxSpeed,       // normalized speed
       Math.sin(this.angle),             // heading sin
@@ -444,7 +473,8 @@ export class Creature {
   drawSensors(ctx) {
     const directions = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
     const foodColors = ['#4ade80', '#4ade80', '#4ade80', '#4ade80'];
-    const creatureColors = ['#8b5cf6', '#8b5cf6', '#8b5cf6', '#8b5cf6'];
+    const predatorColors = ['#ef4444', '#ef4444', '#ef4444', '#ef4444'];  // Red for predators
+    const preyColors = ['#06b6d4', '#06b6d4', '#06b6d4', '#06b6d4'];      // Cyan for prey
 
     for (let i = 0; i < 4; i++) {
       const sensorAngle = this.angle + directions[i];
@@ -460,13 +490,23 @@ export class Creature {
       ctx.globalAlpha = 0.5;
       ctx.stroke();
 
-      // Creature sensors
-      const creatureEndX = this.x + Math.cos(sensorAngle) * this.sensorLength * this.creatureSensors[i];
-      const creatureEndY = this.y + Math.sin(sensorAngle) * this.sensorLength * this.creatureSensors[i];
+      // Predator sensors
+      const predatorEndX = this.x + Math.cos(sensorAngle) * this.sensorLength * this.predatorSensors[i];
+      const predatorEndY = this.y + Math.sin(sensorAngle) * this.sensorLength * this.predatorSensors[i];
       ctx.beginPath();
       ctx.moveTo(this.x, this.y);
-      ctx.lineTo(creatureEndX, creatureEndY);
-      ctx.strokeStyle = creatureColors[i];
+      ctx.lineTo(predatorEndX, predatorEndY);
+      ctx.strokeStyle = predatorColors[i];
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Prey sensors
+      const preyEndX = this.x + Math.cos(sensorAngle) * this.sensorLength * this.preySensors[i];
+      const preyEndY = this.y + Math.sin(sensorAngle) * this.sensorLength * this.preySensors[i];
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(preyEndX, preyEndY);
+      ctx.strokeStyle = preyColors[i];
       ctx.lineWidth = 2;
       ctx.stroke();
 
