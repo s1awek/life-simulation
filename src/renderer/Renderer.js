@@ -17,9 +17,51 @@ export class Renderer {
     // Selected creature
     this.selectedCreature = null;
 
+    // Camera system for zoom and pan
+    this.camera = {
+      x: world.width / 2,    // Center of world
+      y: world.height / 2,
+      zoom: 1.0,             // 1.0 = 100%, 0.5 = 50%, 2.0 = 200%
+      minZoom: 0.5,
+      maxZoom: 2.0
+    };
+
     // Stars background
     this.stars = [];
     this.initStars();
+
+    // Keyboard controls
+    this.keys = {};
+    this.setupControls();
+  }
+
+  setupControls() {
+    window.addEventListener('keydown', (e) => {
+      this.keys[e.key.toLowerCase()] = true;
+
+      // Zoom controls
+      if (e.key === '+' || e.key === '=') {
+        this.zoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        this.zoomOut();
+      } else if (e.key === '0') {
+        this.resetZoom();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keys[e.key.toLowerCase()] = false;
+    });
+
+    // Mouse wheel zoom
+    this.canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        this.zoomIn();
+      } else {
+        this.zoomOut();
+      }
+    });
   }
 
   initStars() {
@@ -48,6 +90,9 @@ export class Renderer {
     const ctx = this.ctx;
     const { width, height } = this.canvas;
 
+    // Update camera position based on keyboard input
+    this.updateCamera();
+
     // Clear with dark gradient background
     const bgGradient = ctx.createLinearGradient(0, 0, width, height);
     bgGradient.addColorStop(0, '#0f0f1a');
@@ -56,8 +101,14 @@ export class Renderer {
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw stars
+    // Draw stars (background - not affected by camera)
     this.drawStars(ctx, time);
+
+    // Save context and apply camera transform
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(this.camera.zoom, this.camera.zoom);
+    ctx.translate(-this.camera.x, -this.camera.y);
 
     // Draw grid
     if (this.showGrid) {
@@ -91,6 +142,10 @@ export class Renderer {
       this.drawTooltip(ctx, this.selectedCreature);
     }
 
+    // Restore context (exit camera transform)
+    ctx.restore();
+
+    // Draw UI elements (not affected by camera)
     // Draw generation progress bar
     this.drawProgressBar(ctx);
 
@@ -98,6 +153,37 @@ export class Renderer {
     if (this.world.isPaused) {
       this.drawPauseIndicator(ctx);
     }
+
+    // Draw zoom level
+    this.drawZoomLevel(ctx);
+  }
+
+  /**
+   * Update camera position based on keyboard input
+   */
+  updateCamera() {
+    const panSpeed = 10 / this.camera.zoom; // Faster pan when zoomed out
+
+    // WASD or Arrow keys for panning
+    if (this.keys['w'] || this.keys['arrowup']) {
+      this.camera.y -= panSpeed;
+    }
+    if (this.keys['s'] || this.keys['arrowdown']) {
+      this.camera.y += panSpeed;
+    }
+    if (this.keys['a'] || this.keys['arrowleft']) {
+      this.camera.x -= panSpeed;
+    }
+    if (this.keys['d'] || this.keys['arrowright']) {
+      this.camera.x += panSpeed;
+    }
+
+    // Constrain camera to world bounds
+    const viewWidth = this.canvas.width / this.camera.zoom;
+    const viewHeight = this.canvas.height / this.camera.zoom;
+
+    this.camera.x = Math.max(viewWidth / 2, Math.min(this.world.width - viewWidth / 2, this.camera.x));
+    this.camera.y = Math.max(viewHeight / 2, Math.min(this.world.height - viewHeight / 2, this.camera.y));
   }
 
   /**
@@ -246,25 +332,24 @@ export class Renderer {
   }
 
   drawGrid(ctx) {
-    const { width, height } = this.canvas;
     const gridSize = 50;
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
 
     // Vertical lines
-    for (let x = 0; x <= width; x += gridSize) {
+    for (let x = 0; x <= this.world.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
+      ctx.lineTo(x, this.world.height);
       ctx.stroke();
     }
 
     // Horizontal lines
-    for (let y = 0; y <= height; y += gridSize) {
+    for (let y = 0; y <= this.world.height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      ctx.lineTo(this.world.width, y);
       ctx.stroke();
     }
   }
@@ -302,5 +387,40 @@ export class Renderer {
   toggleAllTooltips() {
     this.showAllTooltips = !this.showAllTooltips;
     return this.showAllTooltips;
+  }
+
+  /**
+   * Zoom controls
+   */
+  zoomIn() {
+    this.camera.zoom = Math.min(this.camera.maxZoom, this.camera.zoom * 1.2);
+  }
+
+  zoomOut() {
+    this.camera.zoom = Math.max(this.camera.minZoom, this.camera.zoom / 1.2);
+  }
+
+  resetZoom() {
+    this.camera.zoom = 1.0;
+    this.camera.x = this.world.width / 2;
+    this.camera.y = this.world.height / 2;
+  }
+
+  setZoom(zoom) {
+    this.camera.zoom = Math.max(this.camera.minZoom, Math.min(this.camera.maxZoom, zoom));
+  }
+
+  /**
+   * Draw zoom level indicator
+   */
+  drawZoomLevel(ctx) {
+    const zoomPercent = Math.round(this.camera.zoom * 100);
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`Zoom: ${zoomPercent}%`, this.canvas.width - 15, this.canvas.height - 15);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillText('WASD: Pan | +/- or Scroll: Zoom | 0: Reset', this.canvas.width - 15, this.canvas.height - 35);
   }
 }

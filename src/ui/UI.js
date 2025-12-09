@@ -40,6 +40,11 @@ export class UI {
             <span id="speed-value">1x</span>
           </div>
         </div>
+        <div class="zoom-controls">
+          <button id="btn-zoom-out" class="ui-btn ui-btn-small" title="Zoom Out">-</button>
+          <button id="btn-zoom-reset" class="ui-btn ui-btn-small" title="Reset Zoom">100%</button>
+          <button id="btn-zoom-in" class="ui-btn ui-btn-small" title="Zoom In">+</button>
+        </div>
       </div>
       
       <div class="ui-section">
@@ -213,6 +218,25 @@ export class UI {
         this.updateSurvivorLog();
       }
     });
+
+    // Zoom controls
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+      this.renderer.zoomIn();
+      this.updateZoomButton();
+    });
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+      this.renderer.zoomOut();
+      this.updateZoomButton();
+    });
+    document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+      this.renderer.resetZoom();
+      this.updateZoomButton();
+    });
+  }
+
+  updateZoomButton() {
+    const zoomPercent = Math.round(this.renderer.camera.zoom * 100);
+    document.getElementById('btn-zoom-reset').textContent = `${zoomPercent}%`;
   }
 
   /**

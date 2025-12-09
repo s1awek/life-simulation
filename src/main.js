@@ -29,11 +29,21 @@ class Simulation {
     this.resize();
     window.addEventListener('resize', () => this.resize());
 
-    // Create world
-    this.world = new World(this.canvas.width, this.canvas.height, {
+    // Create world (2x window size for more space)
+    const worldWidth = this.canvas.width * 2;
+    const worldHeight = this.canvas.height * 2;
+
+    this.world = new World(worldWidth, worldHeight, {
       populationSize: 40,
-      foodCount: 60,
-      generationLength: 800
+      foodCount: 80,              // Increased from 60 (+33%)
+      meatCount: 10,              // Increased from 5 (+100%)
+      generationLength: 2000,     // Increased from 800 (+150%)
+      predatorRatio: 0.25,        // Increased from 0.2 (+25%)
+
+      // Stronger ecosystem balancing
+      foodScalingFactor: 0.9,     // More aggressive (was 0.8)
+      overpopulationThreshold: 0.65, // Earlier penalty (was 0.7)
+      herbivorePenalty: 0.20      // Stronger penalty (was 0.15)
     });
 
     // Create renderer
@@ -55,8 +65,12 @@ class Simulation {
 
   handleClick(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
+
+    // Transform screen coordinates to world coordinates through camera
+    const worldX = (screenX - this.canvas.width / 2) / this.renderer.camera.zoom + this.renderer.camera.x;
+    const worldY = (screenY - this.canvas.height / 2) / this.renderer.camera.zoom + this.renderer.camera.y;
 
     // Find creature under click
     let closest = null;
@@ -65,8 +79,8 @@ class Simulation {
     for (const creature of this.world.creatures) {
       if (!creature.isAlive()) continue;
 
-      const dx = creature.x - x;
-      const dy = creature.y - y;
+      const dx = creature.x - worldX;
+      const dy = creature.y - worldY;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < creature.radius + 10 && dist < closestDist) {
