@@ -20,6 +20,11 @@ export class UI {
     this.container.innerHTML = this.getHTML();
     document.body.appendChild(this.container);
 
+    // Create configuration modal
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = this.getConfigModalHTML();
+    document.body.appendChild(modalContainer.firstElementChild);
+
     // Create floating toggle button (shown when panel is hidden)
     this.floatingBtn = document.createElement('button');
     this.floatingBtn.className = 'floating-toggle-btn';
@@ -184,7 +189,11 @@ export class UI {
         <p>Best genes survive and evolve</p>
       </div>
       
-      <!-- Configuration Modal -->
+    `;
+  }
+
+  getConfigModalHTML() {
+    return `
       <div id="config-modal" class="modal-overlay">
         <div class="modal-dialog">
           <div class="modal-header">
