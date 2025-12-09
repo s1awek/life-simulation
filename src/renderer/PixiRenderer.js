@@ -48,7 +48,10 @@ export class PixiRenderer {
       ui: new PIXI.Graphics()
     };
 
-    // Initialize PixiJS
+    // Initialization flag
+    this.isReady = false;
+
+    // Initialize PixiJS (async)
     this.initPixi();
     this.setupControls();
   }
@@ -93,8 +96,11 @@ export class PixiRenderer {
     // Position game container for camera
     this.updateCameraTransform();
 
+    // Mark as ready
+    this.isReady = true;
+
     console.log('✨ PixiJS WebGL Renderer initialized!');
-    console.log('📊 GPU:', this.app.renderer.type === PIXI.RENDERER_TYPE.WEBGL ? 'WebGL' : 'Canvas');
+    console.log('📊 GPU: WebGL (PixiJS v8)');
   }
 
   /**
@@ -230,6 +236,8 @@ export class PixiRenderer {
    * Apply camera transform to game container
    */
   updateCameraTransform() {
+    if (!this.gameContainer) return; // Guard: wait for initialization
+
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 2;
 
@@ -244,6 +252,9 @@ export class PixiRenderer {
    * Main render loop
    */
   render(time) {
+    // Wait for initialization
+    if (!this.isReady) return;
+
     // Update camera
     this.updateCamera();
 
@@ -297,6 +308,8 @@ export class PixiRenderer {
    * Update star animation
    */
   updateStars(time) {
+    if (!this.stars) return; // Guard: wait for initialization
+
     for (const star of this.stars) {
       const twinkle = 0.5 + Math.sin(time * 0.002 + star.phase) * 0.5;
       star.graphics.alpha = star.brightness * twinkle * 0.3;
