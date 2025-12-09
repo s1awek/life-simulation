@@ -50,8 +50,8 @@ class Simulation {
     // Create renderer
     this.renderer = new Renderer(this.canvas, this.world);
 
-    // Create UI
-    this.ui = new UI(this.world, this.renderer);
+    // Create UI with restart callback
+    this.ui = new UI(this.world, this.renderer, (config) => this.restart(config));
 
     // Click handler for creature selection
     this.canvas.addEventListener('click', (e) => this.handleClick(e));
@@ -133,6 +133,37 @@ class Simulation {
 
     // Next frame
     requestAnimationFrame((t) => this.animate(t));
+  }
+
+  /**
+   * Restart simulation with new configuration
+   */
+  restart(config) {
+    console.log('🔄 Restarting simulation with config:', config);
+
+    // Create new world with configuration
+    const worldWidth = this.canvas.width * 2;
+    const worldHeight = this.canvas.height * 2;
+
+    this.world = new World(worldWidth, worldHeight, {
+      populationSize: config.populationSize,
+      foodCount: config.foodCount,
+      meatCount: config.meatCount,
+      obstacleCount: config.obstacleCount,
+      generationLength: config.generationLength,
+      predatorRatio: config.predatorRatio,
+      // Keep the same balancing parameters
+      foodScalingFactor: 0.9,
+      overpopulationThreshold: 0.65,
+      herbivorePenalty: 0.20
+    });
+
+    // Update references
+    this.renderer.world = this.world;
+    this.ui.world = this.world;
+
+    console.log('✅ Simulation restarted!');
+    console.log('Population:', this.world.populationSize);
   }
 }
 
