@@ -12,8 +12,11 @@ This project simulates a closed ecosystem where simple organisms (creatures) com
 - **Neural Network Brains**: Creatures use a feedforward neural network to process inputs (food location, other creatures) and decide how to move.
 - **Genetic Evolution**: Successful creatures reproduce. Offspring inherit traits and brain weights with mutations, leading to smarter behaviors over time.
 - **Dynamic Traits**: Creatures have variable traits like **Size**, **Speed**, **Metabolism**, and **Vision Radius**.
-- **Predator & Prey System**: Some creatures can evolve into predators, creating a dynamic balance in the ecosystem.
-- **Real-time Visualization**: Watch the evolution happen in real-time on an HTML5 Canvas.
+- **Predator & Prey Ecosystem**: Dynamic predator-prey balance with cannibalism prevention and intelligent hunting.
+- **Map Obstacles**: Rocks and barriers create strategic depth - prey can hide, predators must navigate.
+- **Ecosystem Balancing**: Dynamic food scarcity, overpopulation penalties, and meat expiration incentivize active hunting.
+- **Zoom & Pan Controls**: Explore the 2x larger world with mouse drag, WASD keys, or mouse wheel zoom.
+- **Real-time Visualization**: Watch the evolution happen with interactive charts tracking fitness and population ratios.
 
 ## 🚀 Getting Started
 
@@ -63,13 +66,37 @@ Creatures are not identical. They have genetic traits that affect their physical
 - **Vision**: Determines how far a creature can "see".
 - **Aggression**: Determines if a creature is likely to be a predator.
 
-### 3. Evolution Cycle
-The simulation runs in **Generations** (epochs).
-1.  **Generation Start**: A population is spawned.
-2.  **Live Phase**: Creatures eat, move, and survive for a fixed time steps.
-3.  **Selection**: At the end of the generation, creatures are ranked by **Fitness** (Food eaten + Time survived).
-4.  **Reproduction**: Top performers replicate. Offspring have slightly mutated brains and traits.
-5.  **Next Generation**: The new population starts the cycle again.
+### 3. Hunting & Food System
+**Meat Types:**
+- **Herbivore meat** 🔴: Red, edible for predators, spawns when herbivores die
+- **Predator meat** 🟣☠️: Purple with skull, toxic to other predators (prevents cannibalism)
+
+**Meat Expiration:**
+- **Hunted meat**: Lasts 800 ticks (incentivizes active hunting)
+- **Starvation meat**: Lasts 300 ticks (spoils faster)
+- **Plants**: Never expire
+
+### 4. Map Obstacles
+Rocks and barriers scattered across the map:
+- **Strategic gameplay**: Prey can hide behind obstacles
+- **Collision detection**: Creatures bounce off and turn around
+- **Spatial dynamics**: Creates territories and safe zones
+
+### 5. Evolution Cycle & Balancing
+The simulation runs in **Generations** of 2000 ticks each.
+
+**Generation Flow:**
+1.  **Generation Start**: Population spawns (25% predators, 75% herbivores)
+2.  **Live Phase**: 2000 ticks of hunting, eating, and survival
+3.  **Dynamic Balancing**: Food scarcity increases when herbivores overpopulate (>65%)
+4.  **Overpopulation Penalties**: Dominant species get -20% fitness penalty
+5.  **Selection**: Top performers selected based on fitness
+6.  **Reproduction**: Elite creatures + mutated offspring form next generation
+
+**Ecosystem Balancing:**
+- **Dynamic food spawning**: Fewer plants when herbivores dominate
+- **Enhanced hunting rewards**: 150 base + kill streak bonuses
+- **Population penalties**: Prevents monocultures
 
 ## 🛠️ Technical Architecture
 
@@ -101,29 +128,51 @@ src/
 ## 🖥️ UI & User Experience
 
 ### Interactive Inspection
-The simulation allows you to inspect individual creatures to understand their behavior and genetics:
-- **Click to Select**: Click on any creature on the canvas to select it.
-- **Visual Feedback**: The selected creature is highlighted with a pulsing white dashed ring.
-- **Live Stats Panel**: A tooltip appears near the creature showing real-time data:
-    - **Type**: Predator (Red) or Herbivore (Green).
-    - **Energy**: Current energy level vs Maximum.
-    - **Fitness**: Current score based on survival and food consumed.
-    - **Traits**: Specific values for **Size**, **Metabolism**, **Aggression**, and **Vision**.
+The simulation allows you to inspect individual creatures:
+- **Click to Select**: Click on any creature to select it
+- **Visual Feedback**: Pulsing white dashed ring highlights selected creature
+- **Live Stats Panel**: Tooltip showing energy, fitness, kills, and genetic traits
+
+### Camera Controls 🎮
+- **Zoom**: Mouse wheel, +/- keys, or UI buttons (50%-200%)
+- **Pan**: 
+  - WASD or Arrow keys
+  - Right-click drag on canvas
+  - Middle-click drag
+- **Reset**: Press 0 to center camera at 100% zoom
+- **World Size**: 2x window size for more exploration space
 
 ### Main Dashboard
-The left-side panel provides global simulation statistics and controls:
-- **Controls**: Pause/Play simulation and adjust speed (1x to 10x).
-- **Population Stats**: Real-time counts of Predators vs Herbivores.
-- **Statistics**: Current ticks, alive count, and kills.
-- **Fitness History**: A graph tracking Average and Max fitness over generations.
-- **Evolution Log**: A running log of major events (Births, Kill, Elite selection).
-- **Generation Survivors**: Breakdown of the survivors from the previous generation.
+The right-side panel provides comprehensive statistics:
+- **Controls**: Pause/Play, speed adjustment (1x-10x), zoom buttons
+- **Population Stats**: Real-time predator vs herbivore counts
+- **Statistics**: Generation, tick, alive count, kills
+- **Fitness History**: Chart tracking avg/max fitness over 50 generations
+- **Population Trend**: NEW! Red/green lines showing predator/prey ratios
+- **Evolution Log**: Filterable log (births, deaths, kills, elites)
+- **Generation Survivors**: Breakdown of elite creatures and offspring
+- **Records**: Best-ever fitness, kills, and generation numbers
 
 ## 🎮 Controls & Interactions
-- **Click on a Creature**: Selects it to view its stats.
-- **Click Empty Space**: Deselects the current creature.
-- **Pause (Spacebar/Button)**: Pauses the simulation.
-- **Toggle "Show All Stats"**: When paused, this reveals tooltips for ALL creatures simultaneously.
+
+### Mouse Controls
+- **Left Click**: Select/deselect creature to view stats
+- **Right Click + Drag**: Pan camera around the world
+- **Middle Click + Drag**: Alternative pan control
+- **Mouse Wheel**: Zoom in/out (50%-200%)
+
+### Keyboard Controls
+- **Spacebar**: Pause/unpause simulation
+- **WASD / Arrow Keys**: Pan camera
+- **+ / -**: Zoom in/out
+- **0 (zero)**: Reset camera to center
+
+### UI Controls
+- **Speed Slider**: Adjust simulation speed (1x-10x)
+- **Zoom Buttons**: -/100%/+ for precise zoom control
+- **Show All Stats**: When paused, show tooltips for all creatures
+- **Log Filters**: Filter evolution log by event type
+- **Display Toggles**: Grid, sensors, and tooltip visibility
 
 ---
 *Created for the Neural Network Life Simulation Project.*
