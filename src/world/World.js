@@ -184,14 +184,14 @@ export class World {
     for (let c = 0; c < clusterCount; c++) {
       const clusterX = Math.random() * this.width;
       const clusterY = Math.random() * this.height;
-      const rocksInCluster = 3 + Math.floor(Math.random() * 3);
+      const rocksInCluster = 5 + Math.floor(Math.random() * 4);
 
       for (let i = 0; i < rocksInCluster; i++) {
         const offsetX = (Math.random() - 0.5) * 150;
         const offsetY = (Math.random() - 0.5) * 150;
         const x = Math.max(50, Math.min(this.width - 50, clusterX + offsetX));
         const y = Math.max(50, Math.min(this.height - 50, clusterY + offsetY));
-        const size = 30 + Math.random() * 50;
+        const size = 50 + Math.random() * 70;
 
         this.obstacles.push(new Obstacle(x, y, size, size, 'rock'));
       }
