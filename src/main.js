@@ -34,8 +34,8 @@ class Simulation {
     const worldHeight = this.canvas.height * 2;
 
     this.world = new World(worldWidth, worldHeight, {
-      populationSize: 40,
-      foodCount: 80,              // Increased from 60 (+33%)
+      populationSize: 140,
+      foodCount: 380,              // Increased from 60 (+33%)
       meatCount: 10,              // Increased from 5 (+100%)
       obstacleCount: 30,          // Number of obstacles on map (doubled for denser coverage)
       generationLength: 20000,     // Increased from 800 (+1500%)
