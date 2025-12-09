@@ -15,6 +15,8 @@ This project simulates a closed ecosystem where simple organisms (creatures) com
 - **Predator & Prey Ecosystem**: Dynamic predator-prey balance with cannibalism prevention and intelligent hunting.
 - **Map Obstacles**: Rocks and barriers create strategic depth - prey can hide, predators must navigate.
 - **Ecosystem Balancing**: Dynamic food scarcity, overpopulation penalties, and meat expiration incentivize active hunting.
+- **Save & Load**: Persist your simulation state to JSON and resume experiments later.
+- **Customizable Settings**: Configure population size, food density, and generation length.
 - **Zoom & Pan Controls**: Explore the 2x larger world with mouse drag, WASD keys, or mouse wheel zoom.
 - **Real-time Visualization**: Watch the evolution happen with interactive charts tracking fitness and population ratios.
 
@@ -248,6 +250,19 @@ The right-side panel provides comprehensive statistics:
 - **Evolution Log**: Filterable log (births, deaths, kills, elites)
 - **Generation Survivors**: Breakdown of elite creatures and offspring
 - **Records**: Best-ever fitness, kills, and generation numbers
+
+### Save & Load System 💾
+- **Save State**: Click the **Floppy Disk** icon to download a JSON file containing the complete simulation state.
+- **Load State**: Click the **Folder** icon to upload a previously saved JSON file and resume your experiment.
+- **Data Persisted**: Preserves all creatures (neural networks & traits), world statistics, and evolution history.
+
+### Configuration ⚙️
+Click the **Gear Icon** to start a new simulation with custom parameters:
+- **Population Size**: 20 to 300 creatures
+- **Food & Meat Count**: Adjust resource abundance
+- **Obstacles**: Set map complexity (0-100)
+- **Generation Length**: Set how long generations last (500-30,000 ticks)
+- **Predator Ratio**: Set initial predator percentage (0-50%)
 
 ## 🎮 Controls & Interactions
 
