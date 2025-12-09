@@ -224,8 +224,14 @@ export class Creature {
 
       // If prey dies, gain energy and fitness
       if (prey.energy <= 0) {
-        this.energy = Math.min(this.maxEnergy, this.energy + prey.maxEnergy * 0.6);
-        this.fitness += 80 + prey.fitness * 0.3;
+        // Enhanced energy gain: 80% of prey's max energy (was 60%)
+        this.energy = Math.min(this.maxEnergy, this.energy + prey.maxEnergy * 0.8);
+
+        // Enhanced fitness rewards for successful hunting
+        // Base kill bonus: 150 (was 80)
+        // Prey fitness bonus: 50% (was 30%)
+        // Per-kill bonus: 20 for each successful kill
+        this.fitness += 150 + prey.fitness * 0.5 + (this.kills * 20);
         this.kills++;
 
         console.log(`☠️ Predator #${this.id} killed prey #${prey.id}! Total kills: ${this.kills}`);

@@ -64,6 +64,16 @@ export class World {
       herbivores: 0
     };
 
+    // Ecosystem balancing parameters
+    this.balancing = {
+      dynamicFoodEnabled: options.dynamicFoodEnabled ?? true,
+      foodScalingFactor: options.foodScalingFactor ?? 0.8,
+      overpopulationThreshold: options.overpopulationThreshold ?? 0.7,
+      herbivorePenalty: options.herbivorePenalty ?? 0.15,
+      predatorPenalty: options.predatorPenalty ?? 0.10,
+      predatorThreshold: options.predatorThreshold ?? 0.5
+    };
+
     // Genetic algorithm
     this.ga = new GeneticAlgorithm({
       mutationRate: 0.1,
@@ -95,11 +105,40 @@ export class World {
     }
   }
 
+  /**
+   * Calculate dynamic food count based on population ratios
+   * When herbivores overpopulate, reduce plant availability
+   */
+  calculateFoodCount() {
+    if (!this.balancing.dynamicFoodEnabled) {
+      return this.foodCount;
+    }
+
+    const alive = this.creatures.filter(c => c.isAlive());
+    if (alive.length === 0) return this.foodCount;
+
+    const herbivores = alive.filter(c => !c.isPredator).length;
+    const herbivoreRatio = herbivores / alive.length;
+
+    // Scale down food when herbivores dominate
+    // Formula: baseFoodCount * (1.5 - herbivoreRatio * scalingFactor)
+    // At 70% herbivores: foodCount * (1.5 - 0.7 * 0.8) = foodCount * 0.94
+    // At 90% herbivores: foodCount * (1.5 - 0.9 * 0.8) = foodCount * 0.78
+    const scalingFactor = this.balancing.foodScalingFactor;
+    const adjustedCount = Math.floor(
+      this.foodCount * (1.5 - herbivoreRatio * scalingFactor)
+    );
+
+    // Ensure minimum food availability
+    return Math.max(Math.floor(this.foodCount * 0.6), adjustedCount);
+  }
+
   spawnFood() {
     this.foods = [];
 
-    // Spawn plants
-    for (let i = 0; i < this.foodCount; i++) {
+    // Spawn plants (with dynamic count based on herbivore population)
+    const dynamicFoodCount = this.calculateFoodCount();
+    for (let i = 0; i < dynamicFoodCount; i++) {
       this.addRandomFood('plant');
     }
 
@@ -156,13 +195,16 @@ export class World {
         }
       }
 
-      // Respawn eaten food
+      // Respawn eaten food (with dynamic count for plants)
       const consumedPlants = this.foods.filter(f => f.consumed && f.type === 'plant').length;
       const consumedMeat = this.foods.filter(f => f.consumed && f.type === 'meat').length;
+      const dynamicFoodCount = this.calculateFoodCount();
 
-      if (consumedPlants > this.foodCount * 0.3 || consumedMeat > 0) {
+      if (consumedPlants > dynamicFoodCount * 0.3 || consumedMeat > 0) {
         this.foods = this.foods.filter(f => !f.consumed);
-        for (let i = 0; i < consumedPlants; i++) {
+        // Respawn plants up to dynamic limit
+        const plantsToSpawn = Math.min(consumedPlants, dynamicFoodCount - this.foods.filter(f => f.type === 'plant').length);
+        for (let i = 0; i < plantsToSpawn; i++) {
           this.addRandomFood('plant');
         }
         // Meat respawns more sparingly
@@ -182,6 +224,31 @@ export class World {
   }
 
   /**
+   * Apply fitness penalties for overpopulated species
+   * Encourages ecosystem balance by penalizing monocultures
+   */
+  applyPopulationPenalties() {
+    const alive = this.creatures.filter(c => c.isAlive());
+    if (alive.length === 0) return;
+
+    const predators = alive.filter(c => c.isPredator).length;
+    const herbivores = alive.filter(c => !c.isPredator).length;
+    const predatorRatio = predators / alive.length;
+    const herbivoreRatio = herbivores / alive.length;
+
+    // Apply penalties to overpopulated species
+    for (const creature of this.creatures) {
+      if (!creature.isPredator && herbivoreRatio > this.balancing.overpopulationThreshold) {
+        // Herbivores are overpopulated
+        creature.fitness *= (1 - this.balancing.herbivorePenalty);
+      } else if (creature.isPredator && predatorRatio > this.balancing.predatorThreshold) {
+        // Predators are overpopulated
+        creature.fitness *= (1 - this.balancing.predatorPenalty);
+      }
+    }
+  }
+
+  /**
    * Evolve to next generation
    */
   nextGeneration() {
@@ -191,6 +258,9 @@ export class World {
         c.fitness += c.energy;
       }
     }
+
+    // Apply overpopulation penalties before selection
+    this.applyPopulationPenalties();
 
     // Get stats and log generation
     const gaStats = this.ga.getStats(this.creatures);
