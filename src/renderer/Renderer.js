@@ -38,6 +38,12 @@ export class Renderer {
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
     this.setupMouseDrag();
+
+    // FPS tracking
+    this.fps = 60;
+    this.frameCount = 0;
+    this.lastFpsUpdate = performance.now();
+    this.frameTimes = [];
   }
 
   setupMouseDrag() {
@@ -136,6 +142,9 @@ export class Renderer {
    * Main render loop
    */
   render(time) {
+    // Track FPS
+    this.updateFPS(time);
+
     const ctx = this.ctx;
     const { width, height } = this.canvas;
 
@@ -212,6 +221,54 @@ export class Renderer {
 
     // Draw zoom level
     this.drawZoomLevel(ctx);
+
+    // Draw FPS counter
+    this.drawFPS(ctx);
+  }
+
+  /**
+   * Update FPS counter
+   */
+  updateFPS(time) {
+    this.frameCount++;
+    const now = performance.now();
+    const elapsed = now - this.lastFpsUpdate;
+
+    // Update FPS every 500ms
+    if (elapsed >= 500) {
+      this.fps = Math.round((this.frameCount * 1000) / elapsed);
+      this.frameCount = 0;
+      this.lastFpsUpdate = now;
+    }
+  }
+
+  /**
+   * Draw FPS counter
+   */
+  drawFPS(ctx) {
+    ctx.save();
+
+    // Semi-transparent background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(10, 10, 80, 30);
+
+    // FPS text
+    ctx.font = 'bold 18px Inter, monospace, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    // Color based on FPS
+    if (this.fps >= 50) {
+      ctx.fillStyle = '#4ade80'; // Green
+    } else if (this.fps >= 30) {
+      ctx.fillStyle = '#fbbf24'; // Yellow
+    } else {
+      ctx.fillStyle = '#ef4444'; // Red
+    }
+
+    ctx.fillText(`FPS: ${this.fps}`, 18, 25);
+
+    ctx.restore();
   }
 
   /**

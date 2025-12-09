@@ -221,44 +221,46 @@ export class World {
         }
       }
 
-      // Log deaths from starvation AND spawn meat
-      for (const creature of this.creatures) {
-        if (!creature.isAlive() && creature.energy <= 0 && !creature._deathLogged) {
-          creature._deathLogged = true;
-          // Only log if not already logged (kill logs death separately)
-          const recentKillLog = this.evolutionLog.entries.find(
-            e => e.type === 'death' && e.creatureId === creature.id
-          );
-          if (!recentKillLog) {
-            this.evolutionLog.logDeath(creature, 'starvation');
-            // Spawn meat when creature starves (spoils faster)
-            this.spawnMeat(creature.x, creature.y, creature.isPredator, false);
-          }
-        }
-      }
-
-      // Respawn eaten food (with dynamic count for plants)
-      const consumedPlants = this.foods.filter(f => f.consumed && f.type === 'plant').length;
-      const consumedMeat = this.foods.filter(f => f.consumed && f.type === 'meat').length;
-      const dynamicFoodCount = this.calculateFoodCount();
-
-      if (consumedPlants > dynamicFoodCount * 0.3 || consumedMeat > 0) {
-        this.foods = this.foods.filter(f => !f.consumed);
-        // Respawn plants up to dynamic limit
-        const plantsToSpawn = Math.min(consumedPlants, dynamicFoodCount - this.foods.filter(f => f.type === 'plant').length);
-        for (let i = 0; i < plantsToSpawn; i++) {
-          this.addRandomFood('plant');
-        }
-        // Meat respawns more sparingly
-        for (let i = 0; i < Math.floor(consumedMeat * 0.3); i++) {
-          this.addRandomFood('meat');
-        }
-      }
-
-      // Check for generation end
+      // Check for generation end (early exit from speed loop)
       const alive = this.creatures.filter(c => c.isAlive()).length;
       if (this.tick >= this.generationLength || alive === 0) {
         this.nextGeneration();
+        break; // Exit speed loop after generation change
+      }
+    }
+
+    // These operations only need to happen once per frame, not per speed iteration
+    // Log deaths from starvation AND spawn meat
+    for (const creature of this.creatures) {
+      if (!creature.isAlive() && creature.energy <= 0 && !creature._deathLogged) {
+        creature._deathLogged = true;
+        // Only log if not already logged (kill logs death separately)
+        const recentKillLog = this.evolutionLog.entries.find(
+          e => e.type === 'death' && e.creatureId === creature.id
+        );
+        if (!recentKillLog) {
+          this.evolutionLog.logDeath(creature, 'starvation');
+          // Spawn meat when creature starves (spoils faster)
+          this.spawnMeat(creature.x, creature.y, creature.isPredator, false);
+        }
+      }
+    }
+
+    // Respawn eaten food (with dynamic count for plants) - once per frame
+    const consumedPlants = this.foods.filter(f => f.consumed && f.type === 'plant').length;
+    const consumedMeat = this.foods.filter(f => f.consumed && f.type === 'meat').length;
+    const dynamicFoodCount = this.calculateFoodCount();
+
+    if (consumedPlants > dynamicFoodCount * 0.3 || consumedMeat > 0) {
+      this.foods = this.foods.filter(f => !f.consumed);
+      // Respawn plants up to dynamic limit
+      const plantsToSpawn = Math.min(consumedPlants, dynamicFoodCount - this.foods.filter(f => f.type === 'plant').length);
+      for (let i = 0; i < plantsToSpawn; i++) {
+        this.addRandomFood('plant');
+      }
+      // Meat respawns more sparingly
+      for (let i = 0; i < Math.floor(consumedMeat * 0.3); i++) {
+        this.addRandomFood('meat');
       }
     }
 
