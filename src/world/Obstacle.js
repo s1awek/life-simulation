@@ -1,6 +1,3 @@
-import { NeuralNetwork } from '../engine/NeuralNetwork.js';
-import { generateTraits, calculateTraitEffects, getTraitColor } from '../engine/Traits.js';
-
 /**
  * Obstacle - Physical barrier on the map
  * Types: rock, tree, wall

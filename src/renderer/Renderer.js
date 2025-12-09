@@ -165,8 +165,10 @@ export class Renderer {
     }
 
     // Draw obstacles
-    for (const obstacle of this.world.obstacles) {
-      obstacle.draw(ctx);
+    if (this.world.obstacles && this.world.obstacles.length > 0) {
+      for (const obstacle of this.world.obstacles) {
+        obstacle.draw(ctx);
+      }
     }
 
     // Draw food

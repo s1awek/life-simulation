@@ -17,6 +17,7 @@ export class World {
     this.populationSize = options.populationSize || 40;
     this.foodCount = options.foodCount || 60;
     this.meatCount = options.meatCount || 5;
+    this.obstacleCount = options.obstacleCount || 15;
     this.generationLength = options.generationLength || 1000;
     this.predatorRatio = options.predatorRatio || 0.2;
 
@@ -174,8 +175,11 @@ export class World {
    * Spawn obstacles on the map
    */
   spawnObstacles() {
+    console.log('🪨 Spawning obstacles... obstacleCount =', this.obstacleCount);
+
     // Create clusters of rocks
     const clusterCount = Math.floor(this.obstacleCount / 3);
+    console.log('Creating', clusterCount, 'clusters');
 
     for (let c = 0; c < clusterCount; c++) {
       const clusterX = Math.random() * this.width;
@@ -192,6 +196,8 @@ export class World {
         this.obstacles.push(new Obstacle(x, y, size, size, 'rock'));
       }
     }
+
+    console.log('✅ Spawned', this.obstacles.length, 'obstacles');
   }
 
   /**
