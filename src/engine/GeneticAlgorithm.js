@@ -12,25 +12,35 @@ export class GeneticAlgorithm {
     this.tournamentSize = options.tournamentSize || 5;
     this.traitMutationRate = options.traitMutationRate || 0.15;
     this.traitMutationStrength = options.traitMutationStrength || 0.2;
+
+    // Species diversity protection
+    this.minSpeciesCount = options.minSpeciesCount || 5;
+    this.speciesEliteCount = options.speciesEliteCount || 2;
+    this.adaptiveMutationMultiplier = options.adaptiveMutationMultiplier || 3;
   }
 
   /**
-   * Evolve a population based on fitness scores
+   * Evolve a population based on fitness scores with species diversity protection
    * @param {Array} population - Array of creatures with fitness
    * @param {Function} createCreature - Factory function to create new creature
    * @param {EvolutionLog} evolutionLog - Optional log for tracking
    * @returns {Array} - New generation
    */
   evolve(population, createCreature, evolutionLog = null) {
-    // Sort by fitness (descending)
-    const sorted = [...population].sort((a, b) => b.fitness - a.fitness);
-    const newGen = [];
     const popSize = population.length;
+    const newGen = [];
 
-    // Elitism - keep top performers unchanged
-    const eliteCount = Math.max(1, Math.floor(popSize * this.elitismRate));
-    for (let i = 0; i < eliteCount; i++) {
-      const parent = sorted[i];
+    // Separate by species
+    const predators = population.filter(c => c.isPredator).sort((a, b) => b.fitness - a.fitness);
+    const prey = population.filter(c => !c.isPredator).sort((a, b) => b.fitness - a.fitness);
+
+    console.log(`🧬 Evolution: ${predators.length} predators, ${prey.length} prey`);
+
+    // STEP 1: Species-based elitism (top 2 from each species)
+    const predatorElites = this.selectTopNFromSpecies(predators, this.speciesEliteCount);
+    const preyElites = this.selectTopNFromSpecies(prey, this.speciesEliteCount);
+
+    for (const parent of [...predatorElites, ...preyElites]) {
       const elite = createCreature({
         isPredator: parent.isPredator,
         traits: { ...parent.traits }
@@ -39,13 +49,62 @@ export class GeneticAlgorithm {
       elite.isElite = true;
       newGen.push(elite);
 
-      // Log elite
       if (evolutionLog) {
-        evolutionLog.logElite(parent, evolutionLog.generationSummaries.length + 1, i + 1);
+        evolutionLog.logElite(parent, evolutionLog.generationSummaries.length + 1, newGen.length);
       }
     }
 
-    // Fill rest with offspring
+    console.log(`✅ Elites: ${predatorElites.length} predators, ${preyElites.length} prey`);
+
+    // STEP 2: Enforce minimum species count with adaptive mutation
+    const currentPredators = newGen.filter(c => c.isPredator).length;
+    const currentPrey = newGen.filter(c => !c.isPredator).length;
+
+    // Add struggling predators with heavy mutation
+    if (currentPredators < this.minSpeciesCount && predators.length > 0) {
+      const needed = this.minSpeciesCount - currentPredators;
+      console.log(`⚠️ Predators struggling! Adding ${needed} with adaptive mutation`);
+
+      for (let i = 0; i < needed && predatorElites.length + i < predators.length; i++) {
+        const weakPredator = predators[predatorElites.length + i];
+        const mutant = createCreature({
+          isPredator: true,
+          traits: mutateTraits({ ...weakPredator.traits },
+            this.traitMutationRate * 2,
+            this.traitMutationStrength * 2)
+        });
+
+        const weights = weakPredator.brain.getWeights();
+        this.mutateAdaptive(weights, this.adaptiveMutationMultiplier);
+        mutant.brain.setWeights(weights);
+        newGen.push(mutant);
+      }
+    }
+
+    // Add struggling prey with heavy mutation
+    if (currentPrey < this.minSpeciesCount && prey.length > 0) {
+      const needed = this.minSpeciesCount - currentPrey;
+      console.log(`⚠️ Prey struggling! Adding ${needed} with adaptive mutation`);
+
+      for (let i = 0; i < needed && preyElites.length + i < prey.length; i++) {
+        const weakPrey = prey[preyElites.length + i];
+        const mutant = createCreature({
+          isPredator: false,
+          traits: mutateTraits({ ...weakPrey.traits },
+            this.traitMutationRate * 2,
+            this.traitMutationStrength * 2)
+        });
+
+        const weights = weakPrey.brain.getWeights();
+        this.mutateAdaptive(weights, this.adaptiveMutationMultiplier);
+        mutant.brain.setWeights(weights);
+        newGen.push(mutant);
+      }
+    }
+
+    // STEP 3: Fill rest with tournament selection
+    const sorted = [...population].sort((a, b) => b.fitness - a.fitness);
+
     while (newGen.length < popSize) {
       const parent1 = this.tournamentSelect(sorted);
       const parent2 = this.tournamentSelect(sorted);
@@ -81,6 +140,10 @@ export class GeneticAlgorithm {
         evolutionLog.logBirth(child, parent1, parent2, evolutionLog.generationSummaries.length + 1);
       }
     }
+
+    const finalPredators = newGen.filter(c => c.isPredator).length;
+    const finalPrey = newGen.filter(c => !c.isPredator).length;
+    console.log(`🎯 Next gen: ${finalPredators} predators, ${finalPrey} prey`);
 
     return newGen;
   }
@@ -141,6 +204,28 @@ export class GeneticAlgorithm {
     while (u === 0) u = Math.random();
     while (v === 0) v = Math.random();
     return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  }
+
+  /**
+   * Select top N creatures from species
+   */
+  selectTopNFromSpecies(creatures, n) {
+    return creatures.slice(0, Math.min(n, creatures.length));
+  }
+
+  /**
+   * Adaptive mutation with higher rates for struggling species
+   */
+  mutateAdaptive(weights, multiplier = 1) {
+    const adaptiveRate = this.mutationRate * multiplier;
+    const adaptiveStrength = this.mutationStrength * multiplier;
+
+    for (let i = 0; i < weights.length; i++) {
+      if (Math.random() < adaptiveRate) {
+        const noise = this.gaussianRandom() * adaptiveStrength;
+        weights[i] += noise;
+      }
+    }
   }
 
   /**
