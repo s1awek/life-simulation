@@ -8,6 +8,9 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "pixi.js": "^8.0.0"
+  },
   "devDependencies": {
     "vite": "^7.2.4"
   }
