@@ -38,7 +38,7 @@ class Simulation {
       foodCount: 80,              // Increased from 60 (+33%)
       meatCount: 10,              // Increased from 5 (+100%)
       obstacleCount: 30,          // Number of obstacles on map (doubled for denser coverage)
-      generationLength: 2000,     // Increased from 800 (+150%)
+      generationLength: 20000,     // Increased from 800 (+1500%)
       predatorRatio: 0.25,        // Increased from 0.2 (+25%)
 
       // Stronger ecosystem balancing

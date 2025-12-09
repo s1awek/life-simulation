@@ -83,11 +83,11 @@ Rocks and barriers scattered across the map:
 - **Spatial dynamics**: Creates territories and safe zones
 
 ### 5. Evolution Cycle & Balancing
-The simulation runs in **Generations** of 2000 ticks each.
+The simulation runs in **Generations** of 20,000 ticks each.
 
 **Generation Flow:**
 1.  **Generation Start**: Population spawns (25% predators, 75% herbivores)
-2.  **Live Phase**: 2000 ticks of hunting, eating, and survival
+2.  **Live Phase**: 20,000 ticks of hunting, eating, and survival
 3.  **Dynamic Balancing**: Food scarcity increases when herbivores overpopulate (>65%)
 4.  **Overpopulation Penalties**: Dominant species get -20% fitness penalty
 5.  **Selection**: Top performers selected based on fitness
@@ -97,6 +97,102 @@ The simulation runs in **Generations** of 2000 ticks each.
 - **Dynamic food spawning**: Fewer plants when herbivores dominate
 - **Enhanced hunting rewards**: 150 base + kill streak bonuses
 - **Population penalties**: Prevents monocultures
+
+### 6. Fitness & Selection System
+
+#### 📊 Fitness Calculation
+Each creature accumulates fitness points throughout its lifetime:
+
+**Base Fitness (All Creatures):**
+- **+0.01 per tick survived** - Rewards longevity
+- **+Food energy** when eating (5-20 for plants, 20-45 for meat)
+- **+Remaining energy** at generation end (if alive)
+
+**Predator Bonuses:**
+- **+150 points** per kill (base reward)
+- **+50% of prey's fitness** (rewards hunting strong prey)
+- **+20 × kill count** (progressive bonus - encourages kill streaks)
+
+**Penalties:**
+- **-15% to -20%** fitness if species overpopulates (maintains balance)
+
+#### 🧬 Genetic Algorithm Selection
+
+The selection process uses a combination of **Elitism** and **Tournament Selection**:
+
+##### A. Elitism (Top 10%)
+```
+elitismRate = 0.1  (10% of population)
+```
+- The **top 10% fittest creatures** pass directly to the next generation **unchanged**
+- Exact copies: same neural network weights, same genetic traits
+- Marked with golden crown in UI
+- **Guarantees**: Best solutions are never lost, avg fitness never decreases
+
+**Example:** With 40 creatures → **4 elites** clone directly
+
+##### B. Tournament Selection (Remaining 90%)
+For each offspring position:
+
+**1. Parent Selection (Tournament of 5)**
+```
+tournamentSize = 5
+```
+- Randomly pick 5 candidates from population
+- Select the one with highest fitness
+- Repeat to get second parent
+- This gives better creatures higher chance while maintaining diversity
+
+**2. Crossover (Genetic Mixing)**
+- **Neural network weights**: Each of 744 weights randomly inherited from parent 1 or 2 (50/50)
+- **Genetic traits**: Each trait (size, metabolism, vision, etc.) from random parent
+- **Predator/Prey type**: From random parent + **5% chance to flip type**
+
+**3. Mutation (Innovation)**
+```
+mutationRate = 0.1        (10% chance per weight)
+mutationStrength = 0.3    (±30% adjustment)
+traitMutationRate = 0.15  (15% chance per trait)
+```
+- **Neural weights**: 10% of weights get Gaussian noise added (±0.3)
+- **Genetic traits**: 15% of traits mutate (±20% of value)
+- Enables discovery of new strategies and prevents local optima
+
+#### 🎯 Why This Works
+
+**Tournament Selection Benefits:**
+- ✅ Stronger creatures have higher reproduction probability
+- ✅ Weaker creatures still have small chance (genetic diversity)
+- ✅ Avoids "inbreeding" (all offspring from same 2 parents)
+- ✅ Efficient: O(n) complexity
+
+**Elitism Guarantees:**
+- ✅ Best solutions preserved each generation
+- ✅ Convergence: fitness can only stay same or improve
+- ✅ Stability: prevents random catastrophic performance drops
+
+**Mutation Exploration:**
+- ✅ Discovers new neural network configurations
+- ✅ Escapes local fitness maxima
+- ✅ Adapts to changing ecosystem conditions
+
+#### 📈 Selection Example
+
+Starting population of 40 creatures with fitness scores:
+```
+Rank  Fitness  Fate
+1     800      → Elite (clone)
+2     650      → Elite (clone)
+3     600      → Elite (clone)
+4     550      → Elite (clone)
+5-40  500-20   → Tournament pool for breeding
+```
+
+Next generation composition:
+- **4 elites** (exact clones of top 4)
+- **36 offspring** created via tournament selection + crossover + mutation
+
+A weak creature (fitness: 50) has only ~5% chance to be selected in any tournament, so it rarely reproduces. A strong creature (fitness: 600) is chosen in ~80% of tournaments it's in.
 
 ## 🛠️ Technical Architecture
 
