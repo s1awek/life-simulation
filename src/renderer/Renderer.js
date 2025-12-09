@@ -115,6 +115,11 @@ export class Renderer {
       this.drawGrid(ctx);
     }
 
+    // Draw obstacles
+    for (const obstacle of this.world.obstacles) {
+      obstacle.draw(ctx);
+    }
+
     // Draw food
     for (const food of this.world.foods) {
       food.draw(ctx, time);

@@ -1,5 +1,6 @@
 import { Creature } from './Creature.js';
 import { Food } from './Food.js';
+import { Obstacle } from './Obstacle.js';
 import { GeneticAlgorithm } from '../engine/GeneticAlgorithm.js';
 import { EvolutionLog } from '../engine/EvolutionLog.js';
 
@@ -22,6 +23,7 @@ export class World {
     // State
     this.creatures = [];
     this.foods = [];
+    this.obstacles = [];
     this.generation = 1;
     this.tick = 0;
     this.isPaused = false;
@@ -91,6 +93,7 @@ export class World {
   init() {
     this.spawnCreatures();
     this.spawnFood();
+    this.spawnObstacles();
   }
 
   spawnCreatures() {
@@ -159,10 +162,35 @@ export class World {
 
   /**
    * Spawn meat at specific location (when prey dies)
+   * @param {boolean} fromPredator - If true, meat is from predator (toxic to other predators)
    */
-  spawnMeat(x, y) {
+  spawnMeat(x, y, fromPredator = false) {
     const energy = 25 + Math.random() * 20;
-    this.foods.push(new Food(x, y, energy, 'meat'));
+    this.foods.push(new Food(x, y, energy, 'meat', fromPredator));
+  }
+
+  /**
+   * Spawn obstacles on the map
+   */
+  spawnObstacles() {
+    // Create clusters of rocks
+    const clusterCount = Math.floor(this.obstacleCount / 3);
+
+    for (let c = 0; c < clusterCount; c++) {
+      const clusterX = Math.random() * this.width;
+      const clusterY = Math.random() * this.height;
+      const rocksInCluster = 3 + Math.floor(Math.random() * 3);
+
+      for (let i = 0; i < rocksInCluster; i++) {
+        const offsetX = (Math.random() - 0.5) * 150;
+        const offsetY = (Math.random() - 0.5) * 150;
+        const x = Math.max(50, Math.min(this.width - 50, clusterX + offsetX));
+        const y = Math.max(50, Math.min(this.height - 50, clusterY + offsetY));
+        const size = 30 + Math.random() * 50;
+
+        this.obstacles.push(new Obstacle(x, y, size, size, 'rock'));
+      }
+    }
   }
 
   /**

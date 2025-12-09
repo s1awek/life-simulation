@@ -97,6 +97,11 @@ export class UI {
       </div>
       
       <div class="ui-section">
+        <h2>Population Trend</h2>
+        <canvas id="population-chart-canvas" width="280" height="120"></canvas>
+      </div>
+      
+      <div class="ui-section">
         <h2>Evolution Log</h2>
         <div class="log-filters">
           <button class="log-filter active" data-filter="all">All</button>
@@ -256,6 +261,7 @@ export class UI {
 
     // Update chart
     this.drawChart();
+    this.drawPopulationChart();
 
     // Update evolution log
     this.updateLog();
@@ -483,5 +489,111 @@ export class UI {
 
     document.getElementById('record-most-kills').textContent = r.mostKills;
     document.getElementById('record-most-kills-gen').textContent = `Gen ${r.mostKillsGen}`;
+  }
+
+  /**
+   * Draw population trend chart (predators vs herbivores)
+   */
+  drawPopulationChart() {
+    const canvas = document.getElementById('population-chart-canvas');
+    const ctx = canvas.getContext('2d');
+    const history = this.world.stats.history;
+
+    // Get the actual displayed size
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // Resize canvas to match display size with high-DPI support
+    const displayWidth = rect.width;
+    const displayHeight = rect.height;
+
+    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    const width = displayWidth;
+    const height = displayHeight;
+
+    if (history.length < 2) {
+      // Show placeholder when no data
+      ctx.fillStyle = 'rgba(15, 15, 26, 0.8)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = '12px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.textAlign = 'center';
+      ctx.fillText('Waiting for data...', width / 2, height / 2);
+      ctx.textAlign = 'left';
+      return;
+    }
+
+    // Clear
+    ctx.fillStyle = 'rgba(15, 15, 26, 0.8)';
+    ctx.fillRect(0, 0, width, height);
+
+    // Find max for scaling
+    const maxPop = Math.max(...history.map(h => Math.max(h.predators, h.herbivores)), 1);
+    const padding = 10;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2 - 10;
+
+    // Draw grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padding + (chartHeight / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
+
+    // Draw predator line (red)
+    ctx.beginPath();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+
+    for (let i = 0; i < history.length; i++) {
+      const x = padding + (i / (history.length - 1)) * chartWidth;
+      const y = padding + 10 + (1 - history[i].predators / maxPop) * chartHeight;
+
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+
+    // Draw herbivore line (green)
+    ctx.beginPath();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2;
+
+    for (let i = 0; i < history.length; i++) {
+      const x = padding + (i / (history.length - 1)) * chartWidth;
+      const y = padding + 10 + (1 - history[i].herbivores / maxPop) * chartHeight;
+
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+
+    // Legend
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = '#ef4444';
+    ctx.fillText('● Predators', padding, 12);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillText('● Herbivores', padding + 70, 12);
+
+    // Show current max value
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${maxPop}`, width - padding, 12);
+    ctx.textAlign = 'left';
   }
 }

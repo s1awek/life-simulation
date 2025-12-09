@@ -80,12 +80,13 @@ export class Creature {
       let closestFoodDist = this.sensorLength;
       let closestCreatureDist = this.sensorLength;
 
-      // Sense food (predators sense meat, herbivores sense plants)
+      // Sense food (predators sense meat BUT NOT predator meat, herbivores sense plants)
       for (const food of this.world.foods) {
         if (food.consumed) continue;
 
-        // Filter by food type
+        // Filter by food type AND prevent cannibalism
         if (this.isPredator && food.type !== 'meat') continue;
+        if (this.isPredator && food.isPredatorMeat) continue; // Can't eat predator meat
         if (!this.isPredator && food.type !== 'plant') continue;
 
         const dx = food.x - this.x;
@@ -242,8 +243,8 @@ export class Creature {
           this.world.evolutionLog.logDeath(prey, 'hunted');
         }
 
-        // Spawn meat where prey died
-        this.world.spawnMeat(prey.x, prey.y);
+        // Spawn meat where prey died (track if it's from predator)
+        this.world.spawnMeat(prey.x, prey.y, prey.isPredator);
       }
     }
   }
@@ -274,6 +275,19 @@ export class Creature {
     this.x += Math.cos(this.angle) * this.speed;
     this.y += Math.sin(this.angle) * this.speed;
 
+    // Check obstacle collisions
+    for (const obstacle of this.world.obstacles) {
+      if (obstacle.contains(this.x, this.y)) {
+        // Bounce back
+        this.x = prevX;
+        this.y = prevY;
+        // Turn around with some randomness
+        this.angle += Math.PI + (Math.random() - 0.5) * 0.5;
+        this.speed *= 0.5; // Reduce speed on collision
+        break;
+      }
+    }
+
     // Track distance
     const dx = this.x - prevX;
     const dy = this.y - prevY;
@@ -294,8 +308,9 @@ export class Creature {
     for (const food of this.world.foods) {
       if (food.consumed) continue;
 
-      // Filter by food type
+      // Filter by food type AND prevent cannibalism
       if (this.isPredator && food.type !== 'meat') continue;
+      if (this.isPredator && food.isPredatorMeat) continue; // Can't eat predator meat
       if (!this.isPredator && food.type !== 'plant') continue;
 
       const dx = food.x - this.x;
