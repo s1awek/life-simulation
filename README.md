@@ -2,7 +2,21 @@
 
 A web-based evolutionary simulation where creatures evolve neural networks to survive and reproduce. Built with Vanilla JavaScript and Vite.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/s1awek/life-simulation/actions/workflows/ci.yml/badge.svg)](https://github.com/s1awek/life-simulation/actions)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/s1awek/life-simulation/graphs/commit-activity)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+
 ![Simulation Screenshot](public/screenshots/simulation_running.png)
+
+## 📖 Table of Contents
+- [Overview](#-overview)
+- [Quick Start](#-quick-start)
+- [Simulation Mechanics](#-simulation-mechanics)
+- [Controls & Interactions](#-controls--interactions)
+- [Technical Architecture](#-technical-architecture)
+- [Contributing](#-contributing)
+- [Author](#-author)
 
 ## 🌟 Overview
 
@@ -20,35 +34,31 @@ This project simulates a closed ecosystem where simple organisms (creatures) com
 - **Zoom & Pan Controls**: Explore the 2x larger world with mouse drag, WASD keys, or mouse wheel zoom.
 - **Real-time Visualization**: Watch the evolution happen with interactive charts tracking fitness and population ratios.
 
-## 🚀 Getting Started
+## 🚀 Quick Start
+
+Get the simulation running in minutes!
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v14 or higher)
-- npm (Node Package Manager)
+- npm
 
-### Installation
+### Installation & Run
 
-1.  **Clone the repository**
+1.  **Clone and Install:**
     ```bash
     git clone <repository-url>
     cd life-simulation
-    ```
-
-2.  **Install dependencies**
-    ```bash
     npm install
     ```
 
-3.  **Start the development server**
+2.  **Start Simulation:**
     ```bash
     npm run dev
     ```
 
-4.  **Open in Browser**
-    Visit `http://localhost:5173` (or the URL shown in your terminal) to see the simulation running.
+3.  **View:** Open `http://localhost:5173` in your browser.
 
 ### Build for Production
-To build the project for deployment:
 ```bash
 npm run build
 ```
@@ -196,6 +206,27 @@ Next generation composition:
 
 A weak creature (fitness: 50) has only ~5% chance to be selected in any tournament, so it rarely reproduces. A strong creature (fitness: 600) is chosen in ~80% of tournaments it's in.
 
+## 🎮 Controls & Interactions
+
+### Mouse Controls
+- **Left Click**: Select/deselect creature to view stats
+- **Right Click + Drag**: Pan camera around the world
+- **Middle Click + Drag**: Alternative pan control
+- **Mouse Wheel**: Zoom in/out (50%-200%)
+
+### Keyboard Controls
+- **Spacebar**: Pause/unpause simulation
+- **WASD / Arrow Keys**: Pan camera
+- **+ / -**: Zoom in/out
+- **0 (zero)**: Reset camera to center
+
+### UI Controls
+- **Speed Slider**: Adjust simulation speed (1x-10x)
+- **Zoom Buttons**: -/100%/+ for precise zoom control
+- **Show All Stats**: When paused, show tooltips for all creatures
+- **Log Filters**: Filter evolution log by event type
+- **Display Toggles**: Grid, sensors, and tooltip visibility
+
 ## 🛠️ Technical Architecture
 
 ### Project Structure
@@ -265,31 +296,20 @@ Click the **Gear Icon** to start a new simulation with custom parameters:
 - **Generation Length**: Set how long generations last (500-30,000 ticks)
 - **Predator Ratio**: Set initial predator percentage (0-50%)
 
-## 🎮 Controls & Interactions
-
-### Mouse Controls
-- **Left Click**: Select/deselect creature to view stats
-- **Right Click + Drag**: Pan camera around the world
-- **Middle Click + Drag**: Alternative pan control
-- **Mouse Wheel**: Zoom in/out (50%-200%)
-
-### Keyboard Controls
-- **Spacebar**: Pause/unpause simulation
-- **WASD / Arrow Keys**: Pan camera
-- **+ / -**: Zoom in/out
-- **0 (zero)**: Reset camera to center
-
-### UI Controls
-- **Speed Slider**: Adjust simulation speed (1x-10x)
-- **Zoom Buttons**: -/100%/+ for precise zoom control
-- **Show All Stats**: When paused, show tooltips for all creatures
-- **Log Filters**: Filter evolution log by event type
-- **Display Toggles**: Grid, sensors, and tooltip visibility
-
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
 Feel free to check the [issues page](https://github.com/s1awek/life-simulation/issues).
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+## 🌟 Support
+
+If you like this project, please give it a **star** ⭐!
 
 ## 👨‍💻 Author
 
