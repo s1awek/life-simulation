@@ -6,6 +6,7 @@ A web-based evolutionary simulation where creatures evolve neural networks to su
 [![Build Status](https://github.com/s1awek/life-simulation/actions/workflows/ci.yml/badge.svg)](https://github.com/s1awek/life-simulation/actions)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/s1awek/life-simulation/graphs/commit-activity)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![Live Demo](https://img.shields.io/badge/demo-live-green.svg)](https://life-simulation-two.vercel.app/)
 
 ![Simulation Screenshot](public/screenshots/simulation_running.png)
 
@@ -19,6 +20,8 @@ A web-based evolutionary simulation where creatures evolve neural networks to su
 - [Author](#-author)
 
 ## 🌟 Overview
+
+[**🔴 Play the Live Demo**](https://life-simulation-two.vercel.app/)
 
 This project simulates a closed ecosystem where simple organisms (creatures) compete for food and survival. Each creature has a unique **Neural Network (Brain)** that dictates its movement and actions based on sensory input. Through **Genetic Algorithm (Evolution)**, the fittest creatures—those that eat enough food to survive—pass their genes (neural weights and physical traits) to the next generation.
 
