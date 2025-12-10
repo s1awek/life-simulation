@@ -2,6 +2,8 @@
 
 A web-based evolutionary simulation where creatures evolve neural networks to survive and reproduce. Built with Vanilla JavaScript and Vite.
 
+**[🎮 Try the Live Demo](https://life-simulation-two.vercel.app/)**
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/s1awek/life-simulation/actions/workflows/ci.yml/badge.svg)](https://github.com/s1awek/life-simulation/actions)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/s1awek/life-simulation/graphs/commit-activity)
@@ -37,6 +39,8 @@ This project simulates a closed ecosystem where simple organisms (creatures) com
 ## 🚀 Quick Start
 
 Get the simulation running in minutes!
+
+**Or try the live version immediately: [https://life-simulation-two.vercel.app/](https://life-simulation-two.vercel.app/)**
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v14 or higher)
