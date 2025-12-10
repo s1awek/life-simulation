@@ -34,33 +34,50 @@
 
 This project simulates a closed ecosystem where simple organisms (creatures) compete for food and survival. Each creature has a unique **Neural Network (Brain)** that dictates its movement and actions based on sensory input. Through **Genetic Algorithm (Evolution)**, the fittest creatures—those that eat enough food to survive—pass their genes (neural weights and physical traits) to the next generation.
 
+### Key Features
+- **Neural Network Brains**: Creatures use a feedforward neural network to process inputs (food location, other creatures) and decide how to move.
+- **Genetic Evolution**: Successful creatures reproduce. Offspring inherit traits and brain weights with mutations, leading to smarter behaviors over time.
+- **Dynamic Traits**: Creatures have variable traits like **Size**, **Speed**, **Metabolism**, and **Vision Radius**.
+- **Predator & Prey Ecosystem**: Dynamic predator-prey balance with cannibalism prevention and intelligent hunting.
+- **Map Obstacles**: Rocks and barriers create strategic depth - prey can hide, predators must navigate.
+- **Ecosystem Balancing**: Dynamic food scarcity, overpopulation penalties, and meat expiration incentivize active hunting.
+- **Save & Load**: Persist your simulation state to JSON and resume experiments later.
+- **Customizable Settings**: Configure population size, food density, and generation length.
+- **Zoom & Pan Controls**: Explore the 2x larger world with mouse drag, WASD keys, or mouse wheel zoom.
+- **Real-time Visualization**: Watch the evolution happen with interactive charts tracking fitness and population ratios.
+
 ## 🚀 Quick Start
 
-Get the simulation running locally in minutes:
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v14 or higher)
+- npm (Node Package Manager)
 
-```bash
-git clone https://github.com/username/life-simulation.git
-cd life-simulation
-npm install && npm run dev
-```
+### Installation
 
-Visit `http://localhost:5173` (or the URL shown in your terminal) to see the simulation running.
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/username/life-simulation.git
+    cd life-simulation
+    ```
+
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Start the development server**
+    ```bash
+    npm run dev
+    ```
+
+4.  **Open in Browser**
+    Visit `http://localhost:5173` (or the URL shown in your terminal) to see the simulation running.
 
 ### Build for Production
 To build the project for deployment:
 ```bash
 npm run build
 ```
-
-## 🧩 Key Features
-
-- **🧠 Neural Network Brains**: Creatures use a feedforward neural network to process inputs (food location, other creatures) and decide how to move.
-- **🧬 Genetic Evolution**: Successful creatures reproduce. Offspring inherit traits and brain weights with mutations, leading to smarter behaviors over time.
-- **🦁 Predator & Prey Ecosystem**: Dynamic predator-prey balance with cannibalism prevention and intelligent hunting.
-- **🌍 Map Obstacles**: Rocks and barriers create strategic depth - prey can hide, predators must navigate.
-- **⚖️ Ecosystem Balancing**: Dynamic food scarcity, overpopulation penalties, and meat expiration incentivize active hunting.
-- **💾 Save & Load**: Persist your simulation state to JSON and resume experiments later.
-- **🔍 Real-time Visualization**: Watch the evolution happen with interactive charts tracking fitness and population ratios.
 
 ## 🧠 Simulation Mechanics
 
@@ -136,7 +153,11 @@ The selection process uses a combination of **Elitism** and **Tournament Selecti
 elitismRate = 0.1  (10% of population)
 ```
 - The **top 10% fittest creatures** pass directly to the next generation **unchanged**.
+- Exact copies: same neural network weights, same genetic traits.
+- Marked with golden crown in UI.
 - **Guarantees**: Best solutions are never lost, avg fitness never decreases.
+
+**Example:** With 40 creatures → **4 elites** clone directly.
 
 #### B. Tournament Selection (Remaining 90%)
 For each offspring position:
@@ -148,6 +169,7 @@ tournamentSize = 5
 - Randomly pick 5 candidates from population.
 - Select the one with highest fitness.
 - Repeat to get second parent.
+- This gives better creatures higher chance while maintaining diversity.
 
 **2. Crossover (Genetic Mixing)**
 - **Neural network weights**: Each of 744 weights randomly inherited from parent 1 or 2 (50/50).
@@ -162,6 +184,43 @@ traitMutationRate = 0.15  (15% chance per trait)
 ```
 - **Neural weights**: 10% of weights get Gaussian noise added (±0.3).
 - **Genetic traits**: 15% of traits mutate (±20% of value).
+- Enables discovery of new strategies and prevents local optima.
+
+#### 🎯 Why This Works
+
+**Tournament Selection Benefits:**
+- ✅ Stronger creatures have higher reproduction probability.
+- ✅ Weaker creatures still have small chance (genetic diversity).
+- ✅ Avoids "inbreeding" (all offspring from same 2 parents).
+- ✅ Efficient: O(n) complexity.
+
+**Elitism Guarantees:**
+- ✅ Best solutions preserved each generation.
+- ✅ Convergence: fitness can only stay same or improve.
+- ✅ Stability: prevents random catastrophic performance drops.
+
+**Mutation Exploration:**
+- ✅ Discovers new neural network configurations.
+- ✅ Escapes local fitness maxima.
+- ✅ Adapts to changing ecosystem conditions.
+
+#### 📈 Selection Example
+
+Starting population of 40 creatures with fitness scores:
+```
+Rank  Fitness  Fate
+1     800      → Elite (clone)
+2     650      → Elite (clone)
+3     600      → Elite (clone)
+4     550      → Elite (clone)
+5-40  500-20   → Tournament pool for breeding
+```
+
+Next generation composition:
+- **4 elites** (exact clones of top 4).
+- **36 offspring** created via tournament selection + crossover + mutation.
+
+A weak creature (fitness: 50) has only ~5% chance to be selected in any tournament, so it rarely reproduces. A strong creature (fitness: 600) is chosen in ~80% of tournaments it's in.
 
 ## 🎮 Controls & Interactions
 
@@ -192,8 +251,18 @@ The simulation allows you to inspect individual creatures:
 - **Visual Feedback**: Pulsing white dashed ring highlights selected creature.
 - **Live Stats Panel**: Tooltip showing energy, fitness, kills, and genetic traits.
 
+### Camera Controls 🎮
+- **Zoom**: Mouse wheel, +/- keys, or UI buttons (50%-200%).
+- **Pan**:
+  - WASD or Arrow keys.
+  - Right-click drag on canvas.
+  - Middle-click drag.
+- **Reset**: Press 0 to center camera at 100% zoom.
+- **World Size**: 2x window size for more exploration space.
+
 ### Main Dashboard
 The right-side panel provides comprehensive statistics:
+- **Controls**: Pause/Play, speed adjustment (1x-10x), zoom buttons.
 - **Population Stats**: Real-time predator vs herbivore counts.
 - **Statistics**: Generation, tick, alive count, kills.
 - **Fitness History**: Chart tracking avg/max fitness over 50 generations.
@@ -205,6 +274,15 @@ The right-side panel provides comprehensive statistics:
 ### Save & Load System 💾
 - **Save State**: Click the **Floppy Disk** icon to download a JSON file containing the complete simulation state.
 - **Load State**: Click the **Folder** icon to upload a previously saved JSON file and resume your experiment.
+- **Data Persisted**: Preserves all creatures (neural networks & traits), world statistics, and evolution history.
+
+### Configuration ⚙️
+Click the **Gear Icon** to start a new simulation with custom parameters:
+- **Population Size**: 20 to 300 creatures.
+- **Food & Meat Count**: Adjust resource abundance.
+- **Obstacles**: Set map complexity (0-100).
+- **Generation Length**: Set how long generations last (500-30,000 ticks).
+- **Predator Ratio**: Set initial predator percentage (0-50%).
 
 ## 🛠️ Technical Architecture
 
