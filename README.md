@@ -221,7 +221,8 @@ src/
 - **Vanilla JavaScript (ES6+)**: Core logic, no heavy frameworks.
 - **HTML5 Canvas**: High-performance 2D rendering.
 - **Vite**: Fast development build tool.
-- **Chart.js** (implied): For visualizing population stats over generations.
+- **Custom Canvas Charts**: Lightweight visualization using Canvas API for population stats.
+- **PixiJS** (Experimental): Optional WebGL renderer for improved performance (available in source).
 
 ## 🖥️ UI & User Experience
 
@@ -285,5 +286,12 @@ Click the **Gear Icon** to start a new simulation with custom parameters:
 - **Log Filters**: Filter evolution log by event type
 - **Display Toggles**: Grid, sensors, and tooltip visibility
 
----
-*Created for the Neural Network Life Simulation Project.*
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+Feel free to check the [issues page](https://github.com/s1awek/life-simulation/issues).
+
+## 👨‍💻 Author
+
+Created by [WellMade](https://wellmade.online).
+Source code available on [GitHub](https://github.com/s1awek/life-simulation/).
